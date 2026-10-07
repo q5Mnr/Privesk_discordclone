@@ -1,0 +1,12 @@
+torch>=2.1
+transformers>=4.45
+diffusers>=0.27
+accelerate
+fastapi
+uvicorn
+pillow
+pydantic
+safetensors
+huggingface-hub
+regex>=2025.10.22
+python-multipart
