@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import signal
+import shutil
 import traceback
 import urllib.request
 import urllib.error
@@ -160,7 +161,53 @@ def wait_for_health(url, timeout=120, interval=3, label="service"):
     log_error(f"{label} did NOT become ready within {timeout}s")
     return False
 
+def ask_yes(question):
+    try:
+        answer = input(f"  {question} [Y/n]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print("")
+        return False
+    return answer not in ("n", "no", "нет", "0")
+
+def run_cmd(args, cwd=None, timeout=3600, name="cmd"):
+    log_info(f"Запуск: {' '.join(str(a) for a in args)}")
+    if cwd:
+        log_info(f"  cwd: {cwd}")
+    try:
+        r = subprocess.run(
+            args, cwd=cwd, shell=True, capture_output=True,
+            encoding="utf-8", errors="replace", timeout=timeout,
+        )
+        log_subprocess_output(name, r.stdout, r.stderr, r.returncode)
+        return r.returncode == 0
+    except subprocess.TimeoutExpired:
+        log_error(f"{name}: превышено время ожидания ({timeout}s)")
+        return False
+    except Exception as e:
+        log_error(f"{name}: {e}")
+        log_debug(traceback.format_exc())
+        return False
+
+def refresh_path():
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "[Environment]::GetEnvironmentVariable('Path','Machine')+';'+[Environment]::GetEnvironmentVariable('Path','User')"],
+            capture_output=True, encoding="utf-8", errors="replace", timeout=30,
+        )
+        new_path = (r.stdout or "").strip()
+        if new_path:
+            os.environ["PATH"] = new_path
+            log_info("PATH обновлён из реестра")
+    except Exception as e:
+        log_warn(f"Не удалось обновить PATH: {e}")
+
+def node_ok():
+    return bool(shutil.which("node")) and bool(shutil.which("npm"))
+
 def check_python_deps():
+
+
     log_step("CHECK 1/3", "Python зависимости...")
     check_script = os.path.join(AI_SVC_DIR, "check_deps.py")
     log_info(f"Script: {check_script}")
@@ -331,9 +378,84 @@ def check_env():
     log_info(f"  backend/node_modules: {os.path.exists(backend_modules)}")
     log_info(f"  frontend/node_modules: {os.path.exists(frontend_modules)}")
 
+def ensure_python_deps():
+    if check_python_deps():
+        return True
+    log_step("STEP 1/8", "Python зависимости не установлены")
+    req = os.path.join(BASE_DIR, "requirements.txt")
+    if not os.path.exists(req):
+        log_error(f"Нет {req}")
+        return False
+    if not ask_yes("Доустановить Python зависимости (pip install -r requirements.txt)?"):
+        log_warn("Пропущено — AI-сервис может не запуститься")
+        return False
+    if not run_cmd([sys.executable, "-m", "pip", "install", "-r", req], timeout=3600, name="pip"):
+        log_error("pip install завершился с ошибкой")
+        return False
+    return check_python_deps()
+
+def ensure_node():
+    if node_ok():
+        log_step("STEP 2/8", "Node.js и npm — OK")
+        return True
+    refresh_path()
+    if node_ok():
+        log_step("STEP 2/8", "Node.js и npm — OK (после обновления PATH)")
+        return True
+
+    log_step("STEP 2/8", "Node.js / npm не найдены")
+    log_error("Node.js нужен для бэкенда (3001) и фронтенда (5173)")
+    if os.name != "nt":
+        log_error("Установите Node.js 18+ с https://nodejs.org и перезапустите скрипт")
+        return False
+    if not ask_yes("Установить Node.js через winget?"):
+        log_error("Установите Node.js 18+ с https://nodejs.org и перезапустите скрипт")
+        return False
+    run_cmd(
+        ["winget", "install", "--id", "OpenJS.NodeJS.LTS", "-e", "--source", "winget",
+         "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"],
+        timeout=1800, name="winget",
+    )
+    refresh_path()
+    if not node_ok():
+        log_error("Node.js не подхватился — закройте и откройте консоль заново")
+        return False
+    log_ok("Node.js установлен")
+    return True
+
+def ensure_npm_deps(step, name, directory):
+    if os.path.exists(os.path.join(directory, "node_modules")):
+        log_step(f"STEP {step}/8", f"Зависимости {name} — OK")
+        return True
+    log_step(f"STEP {step}/8", f"Установка зависимостей {name}")
+    if not ask_yes(f"Каталог {name}/node_modules отсутствует. Выполнить npm install?"):
+        log_warn(f"Пропущено — {name} не запустится")
+        return False
+    npm = find_npm()
+    return run_cmd([npm, "install"], cwd=directory, timeout=1800, name=f"npm-{name}")
+
+def ensure_models():
+    if check_models():
+        log_step("STEP 5/8", "Модели — OK")
+        return True
+    log_step("STEP 5/8", "Модели не найдены (~6 ГБ)")
+    if not ask_yes("Скачать модели сейчас (small-sd + Qwen3-1.7B, ~6 ГБ)?"):
+        log_warn("Пропущено — генерация изображений и AI-чаты не будут работать")
+        return False
+    script = os.path.join(BASE_DIR, "setup_models.py")
+    if not os.path.exists(script):
+        log_error(f"Нет {script}")
+        return False
+    if not run_cmd([sys.executable, script], cwd=BASE_DIR, timeout=14400, name="models"):
+        log_error("Не удалось скачать модели")
+        return False
+    return check_models()
+
 def start_backend():
+
+
     node = find_node()
-    log_step("STEP 3/5", "Запуск бэкенда (порт 3001)...")
+    log_step("STEP 6/8", "Запуск бэкенда (порт 3001)...")
     kill_port(3001)
     server_js = os.path.join(BACKEND_DIR, "server.js")
     log_info(f"server.js: {server_js}")
@@ -373,7 +495,7 @@ def start_backend():
         return None
 
 def start_ai_service():
-    log_step("STEP 4/5", "Запуск AI Service (порт 8000)...")
+    log_step("STEP 7/8", "Запуск AI Service (порт 8000)...")
     kill_port(8000)
     ai_main = os.path.join(AI_SVC_DIR, "main.py")
     log_info(f"main.py: {ai_main}")
@@ -417,7 +539,7 @@ def start_ai_service():
 
 def start_frontend():
     npm = find_npm()
-    log_step("STEP 5/5", "Запуск фронтенда (порт 5173)...")
+    log_step("STEP 8/8", "Запуск фронтенда (порт 5173)...")
     log_info(f"npm: {npm}")
     log_info(f"Working dir: {FRONTEND_DIR}")
     log_info(f"package.json exists: {os.path.exists(os.path.join(FRONTEND_DIR, 'package.json'))}")
@@ -499,58 +621,43 @@ def main():
         log_error(f"Environment check crashed: {e}")
         log_debug(traceback.format_exc())
 
-    all_ok = True
-
-    try:
-        if not check_python_deps():
-            all_ok = False
-            log_error("Python deps check FAILED")
-    except Exception as e:
-        all_ok = False
-        log_error(f"Python deps check CRASHED: {e}")
-        log_debug(traceback.format_exc())
-
-    try:
-        if not check_node_deps():
-            all_ok = False
-            log_error("Node deps check FAILED")
-    except Exception as e:
-        all_ok = False
-        log_error(f"Node deps check CRASHED: {e}")
-        log_debug(traceback.format_exc())
-
-    try:
-        if not check_models():
-            all_ok = False
-            log_error("Models check FAILED")
-    except Exception as e:
-        all_ok = False
-        log_error(f"Models check CRASHED: {e}")
-        log_debug(traceback.format_exc())
-
     safe_print("\n")
-    if not all_ok:
-        log_error("=" * 40)
-        log_error("ВНИМАНИЕ: Не все проверки пройдены!")
-        log_error("Установите недостающее и перезапустите.")
-        log_error("=" * 40)
+    log_step("SETUP", "Проверка и доустановка недостающего")
+
+    try:
+        ensure_python_deps()
+    except Exception as e:
+        log_error(f"Python deps install CRASHED: {e}")
+        log_debug(traceback.format_exc())
+
+    try:
+        if not ensure_node():
+            log_error("Без Node.js запустить невозможно (бэкенд и фронтенд).")
+            log_error("Установите Node.js 18+ с https://nodejs.org и перезапустите.")
+            input("\n  Нажмите Enter для выхода...")
+            sys.exit(1)
+    except Exception as e:
+        log_error(f"Node.js check CRASHED: {e}")
+        log_debug(traceback.format_exc())
         input("\n  Нажмите Enter для выхода...")
         sys.exit(1)
 
-    log_ok("Все проверки пройдены!")
+    try:
+        ensure_npm_deps(3, "backend", BACKEND_DIR)
+        ensure_npm_deps(4, "frontend", FRONTEND_DIR)
+    except Exception as e:
+        log_error(f"npm install CRASHED: {e}")
+        log_debug(traceback.format_exc())
+
+    try:
+        ensure_models()
+    except Exception as e:
+        log_error(f"Models install CRASHED: {e}")
+        log_debug(traceback.format_exc())
+
     safe_print("\n")
-
-    backend_modules = os.path.join(BACKEND_DIR, "node_modules")
-    if not os.path.exists(backend_modules):
-        install_deps_step(1, "бэкенда", BACKEND_DIR, [npm, "install"])
-    else:
-        log_step("STEP 1/5", "Зависимости бэкенда — OK")
-
-    frontend_modules = os.path.join(FRONTEND_DIR, "node_modules")
-    if not os.path.exists(frontend_modules):
-        install_deps_step(2, "фронтенда", FRONTEND_DIR, [npm, "install"])
-    else:
-        log_step("STEP 2/5", "Зависимости фронтенда — OK")
+    log_ok("Проверки и установка завершены")
+    safe_print("\n")
 
     backend = start_backend()
     if backend is None:
