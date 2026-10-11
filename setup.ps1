@@ -38,7 +38,7 @@ Write-Host ("  npm    : " + (& npm --version 2>&1)) -ForegroundColor Green
 
 # --- python зависимости ---
 Step "Python зависимости (requirements.txt)"
-& python -m pip install -r (Join-Path $root "requirements.txt")
+& python -m pip install -r (Join-Path $root "requirements.txt") --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 if ($LASTEXITCODE -ne 0) { Fail "pip install завершился с ошибкой" }
 Write-Host "  Готово" -ForegroundColor Green
 

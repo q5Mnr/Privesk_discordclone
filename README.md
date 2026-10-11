@@ -70,7 +70,7 @@
 
 ### 🤖 AI-возможности (локальные модели, без облака)
 - **Генерация изображений**: Stable Diffusion (модель `segmind/small-sd`), результат сохраняется как файл.
-- **Генерация текста**: Qwen (`Qwen/Qwen3-1.7B`) с потоковой выдачей (streaming).
+- **Генерация текста**: Qwen2.5-1.5B-Instruct (GGUF, `Qwen/Qwen2.5-1.5B-Instruct-GGUF`, файл `qwen2.5-1.5b-instruct-q4_k_m.gguf`) через `llama-cpp-python` с потоковой выдачей (streaming).
 - История AI-чатов: создание, переименование, удаление, сообщения.
 - Автоперевод кириллических промптов в английский для модели изображений.
 - Отдельный Python-сервис (FastAPI) с эндпоинтами `/generate`, `/generate-text`, `/generate-text-stream`, `/health`.
@@ -102,7 +102,7 @@ RU · EN · UK · DE · FR · ES · IT · PT · PL · TR · ZH
 |------|------|
 | Frontend | React 19, Vite 6, React Router 7, TailwindCSS 3, socket.io-client, lucide-react |
 | Backend | Node.js, Express 4, Socket.IO 4, sql.js (SQLite в памяти), bcryptjs, jsonwebtoken, multer |
-| AI | Python 3.10+, FastAPI, PyTorch, Diffusers (Stable Diffusion), Transformers (Qwen) |
+| AI | Python 3.10+, FastAPI, PyTorch, Diffusers (Stable Diffusion), llama.cpp (Qwen2.5-Instruct GGUF) |
 | БД | SQLite через sql.js (файл `backend/discord.db`) |
 
 ---
@@ -121,7 +121,7 @@ RU · EN · UK · DE · FR · ES · IT · PT · PL · TR · ZH
 ### Быстрый старт
 1. **Установка зависимостей**: запустите `setup.bat` (Windows).
    Скрипт поставит pip-зависимости (`requirements.txt`), `npm install` во frontend и backend,
-   скачает модели (`setup_models.py`: `segmind/small-sd` и `Qwen/Qwen3-1.7B`).
+   скачает модели (`setup_models.py`: `segmind/small-sd` и `Qwen/Qwen2.5-1.5B-Instruct-GGUF`).
 2. **Запуск**: запустите `start.ps1` (или `python start.py`).
    `start.py` проверит окружение, при необходимости доустановит недостающие пакеты и поднимет
    бэкенд, AI-сервис и фронтенд.
@@ -182,7 +182,7 @@ discord-clone/
 │       ├── contexts/       # AuthContext
 │       ├── i18n/           # I18nContext + locales (11 языков)
 │       └── utils/          # api.js
-├── ai-service/             # FastAPI: Stable Diffusion + Qwen
+├── ai-service/             # FastAPI: Stable Diffusion + Qwen2.5 (GGUF)
 ├── requirements.txt
 ├── setup.bat / setup.ps1 / setup_models.py
 └── start.ps1 / start.py

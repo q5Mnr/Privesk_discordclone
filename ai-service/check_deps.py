@@ -13,6 +13,7 @@ REQUIRED_PACKAGES = {
     "pydantic":          "pydantic",
     "safetensors":       "safetensors",
     "huggingface_hub":   "huggingface-hub",
+    "llama_cpp":         "llama-cpp-python",
 }
 
 def check():
@@ -44,7 +45,7 @@ def check():
         print("  Все Python зависимости установлены!")
     else:
         print("  Установите недостающие пакеты:")
-        print("  pip install torch transformers diffusers fastapi uvicorn pillow pydantic safetensors huggingface-hub")
+        print("  pip install torch transformers diffusers fastapi uvicorn pillow pydantic safetensors huggingface-hub llama-cpp-python")
     print("=" * 50)
     return ok
 

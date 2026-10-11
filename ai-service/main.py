@@ -24,11 +24,11 @@ OUTPUT_DIR = BASE_DIR / "generated"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 IMAGE_MODEL_DIR = MODELS_DIR / "small-sd"
-TEXT_MODEL_DIR = MODELS_DIR / "qwen3-1.7b"
+TEXT_MODEL_DIR = MODELS_DIR / "qwen2.5-1.5b-instruct"
+TEXT_MODEL_FILE = TEXT_MODEL_DIR / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
 
 pipe = None
 text_model = None
-text_tokenizer = None
 device = "cpu"
 image_model_loaded = False
 text_model_loaded = False
@@ -68,21 +68,23 @@ def load_image_model():
         print(f"[Image] ERROR: {e}")
 
 def load_text_model():
-    global text_model, text_tokenizer, text_model_loaded, text_model_error
-    if not (TEXT_MODEL_DIR / "config.json").exists():
-        text_model_error = f"Model not found at {TEXT_MODEL_DIR}"
+    global text_model, text_model_loaded, text_model_error
+    if not TEXT_MODEL_FILE.exists():
+        text_model_error = f"Model not found at {TEXT_MODEL_FILE}"
         print(f"[Text] ERROR: {text_model_error}")
         return
-    print("[Text] Loading Qwen3-1.7B...")
+    print("[Text] Loading Qwen2.5-1.5B-Instruct (GGUF Q4_K_M)...")
     try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        text_tokenizer = AutoTokenizer.from_pretrained(str(TEXT_MODEL_DIR), local_files_only=True)
-        text_model = AutoModelForCausalLM.from_pretrained(
-            str(TEXT_MODEL_DIR), local_files_only=True, low_cpu_mem_usage=True,
+        from llama_cpp import Llama
+        n_threads = os.cpu_count() or 4
+        text_model = Llama(
+            model_path=str(TEXT_MODEL_FILE),
+            n_ctx=8192,
+            n_threads=n_threads,
+            verbose=False,
         )
-        text_model.eval()
         text_model_loaded = True
-        print(f"[Text] Qwen3-1.7B loaded OK (dtype={text_model.dtype})")
+        print("[Text] Qwen2.5-1.5B-Instruct loaded OK")
     except Exception as e:
         text_model_error = str(e)
         print(f"[Text] ERROR: {e}")
@@ -148,17 +150,14 @@ def _has_cyrillic(text):
     return False
 
 def _translate_to_english(text):
-    if not text_model or not text_tokenizer:
+    if not text_model:
         return text
     if not _has_cyrillic(text):
         return text
     try:
         messages = [{"role": "user", "content": f"Translate the following text to English for use as an image generation prompt. Output ONLY the translation, nothing else:\n\n{text}"}]
-        input_text = text_tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
-        inputs = text_tokenizer(input_text, return_tensors="pt")
-        with torch.no_grad():
-            outputs = text_model.generate(**inputs, max_new_tokens=200, temperature=0.3, do_sample=False)
-        result = text_tokenizer.decode(outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+        out = text_model.create_chat_completion(messages=messages, max_tokens=200, temperature=0.0)
+        result = (out["choices"][0]["message"]["content"] or "").strip()
         print(f"[Translate] '{text}' -> '{result}'")
         return result if result else text
     except Exception as e:
@@ -207,32 +206,27 @@ class TextGenerateResponse(BaseModel):
 
 @app.post("/generate-text", response_model=TextGenerateResponse)
 async def generate_text(req: TextGenerateRequest):
-    if text_model is None or text_tokenizer is None:
+    if text_model is None:
         if text_model_error:
             raise HTTPException(503, f"Text model failed: {text_model_error}")
         raise HTTPException(503, "Text model still loading...")
     start = time.time()
+    n_tokens = 0
     try:
         messages = [{"role": "user", "content": req.prompt}]
-        input_text = text_tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True,
-            enable_thinking=req.thinking,
+        out = text_model.create_chat_completion(
+            messages=messages,
+            max_tokens=req.max_tokens,
+            temperature=req.temperature if req.temperature > 0 else 0.0,
+            top_p=req.top_p,
         )
-        inputs = text_tokenizer(input_text, return_tensors="pt")
-        input_len = inputs["input_ids"].shape[1]
-        with torch.no_grad():
-            outputs = text_model.generate(
-                **inputs, max_new_tokens=req.max_tokens,
-                temperature=req.temperature, top_p=req.top_p,
-                do_sample=req.temperature > 0,
-            )
-        new_tokens = outputs[0][input_len:]
-        raw_text = text_tokenizer.decode(new_tokens, skip_special_tokens=True)
-        safe_print(f"[Text] tokens={len(new_tokens)} thinking={req.thinking}")
+        raw_text = out["choices"][0]["message"]["content"] or ""
+        n_tokens = (out.get("usage") or {}).get("completion_tokens", 0)
+        safe_print(f"[Text] tokens={n_tokens} thinking={req.thinking}")
     except Exception as e:
         raise HTTPException(500, f"Text generation failed: {str(e)}")
     t = round(time.time() - start, 2)
-    tps = round(len(new_tokens) / t, 2) if t > 0 else 0
+    tps = round(n_tokens / t, 2) if t > 0 and n_tokens else 0
     thinking_text, answer_text = _strip_think(raw_text)
     if not req.thinking:
         thinking_text = ""
@@ -240,7 +234,7 @@ async def generate_text(req: TextGenerateRequest):
 
 @app.post("/generate-text-stream")
 async def generate_text_stream(req: TextGenerateRequest):
-    if text_model is None or text_tokenizer is None:
+    if text_model is None:
         if text_model_error:
             raise HTTPException(503, f"Text model failed: {text_model_error}")
         raise HTTPException(503, "Text model still loading...")
@@ -249,28 +243,21 @@ async def generate_text_stream(req: TextGenerateRequest):
         start = time.time()
         try:
             messages = [{"role": "user", "content": req.prompt}]
-            input_text = text_tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True,
-                enable_thinking=req.thinking,
+            stream = text_model.create_chat_completion(
+                messages=messages,
+                max_tokens=req.max_tokens,
+                temperature=req.temperature if req.temperature > 0 else 0.0,
+                top_p=req.top_p,
+                stream=True,
             )
-            inputs = text_tokenizer(input_text, return_tensors="pt")
-
-            from transformers import TextIteratorStreamer
-            streamer = TextIteratorStreamer(text_tokenizer, skip_special_tokens=False, skip_prompt=True)
-
-            gen_kwargs = dict(
-                **inputs, max_new_tokens=req.max_tokens,
-                temperature=req.temperature, top_p=req.top_p,
-                do_sample=req.temperature > 0,
-                streamer=streamer,
-            )
-            thread = threading.Thread(target=text_model.generate, kwargs=gen_kwargs)
-            thread.start()
 
             buf = ""
             in_thinking = False
 
-            for text_chunk in streamer:
+            for chunk in stream:
+                text_chunk = (chunk["choices"][0].get("delta") or {}).get("content") or ""
+                if not text_chunk:
+                    continue
                 buf += text_chunk
                 while buf:
                     if not in_thinking:
@@ -305,7 +292,6 @@ async def generate_text_stream(req: TextGenerateRequest):
                 if in_thinking:
                     yield f"data: {json.dumps({'type': 'thinking_done'})}\n\n"
 
-            thread.join()
             t = round(time.time() - start, 2)
             yield f"data: {json.dumps({'type': 'done', 'time': t})}\n\n"
         except Exception as e:

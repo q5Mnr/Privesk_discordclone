@@ -259,7 +259,7 @@ def check_models():
     log_step("CHECK 3/3", "Модели...")
     ok = True
     image_model = os.path.join(MODELS_DIR, "small-sd", "model_index.json")
-    text_model = os.path.join(MODELS_DIR, "qwen3-1.7b", "config.json")
+    text_model = os.path.join(MODELS_DIR, "qwen2.5-1.5b-instruct", "qwen2.5-1.5b-instruct-q4_k_m.gguf")
     log_info(f"MODELS_DIR: {MODELS_DIR}")
     log_info(f"MODELS_DIR exists: {os.path.exists(MODELS_DIR)}")
     log_info(f"Image model path: {image_model}")
@@ -279,11 +279,11 @@ def check_models():
         ok = False
 
     if os.path.exists(text_model):
-        log_ok("qwen3-1.7b .............. OK")
+        log_ok("qwen2.5-1.5b ............ OK")
     else:
-        log_error(f"qwen3-1.7b .............. НЕ НАЙДЕН  -->  models/qwen3-1.7b/")
-        log_debug(f"  Checking dir contents of {os.path.join(MODELS_DIR, 'qwen3-1.7b')}:")
-        qw_dir = os.path.join(MODELS_DIR, "qwen3-1.7b")
+        log_error(f"qwen2.5-1.5b ............ НЕ НАЙДЕН  -->  models/qwen2.5-1.5b-instruct/")
+        log_debug(f"  Checking dir contents of {os.path.join(MODELS_DIR, 'qwen2.5-1.5b-instruct')}:")
+        qw_dir = os.path.join(MODELS_DIR, "qwen2.5-1.5b-instruct")
         if os.path.exists(qw_dir):
             for f in os.listdir(qw_dir):
                 log_debug(f"    {f}")
@@ -346,6 +346,15 @@ def check_env():
         log_warn(f"  transformers check failed: {e}")
 
     try:
+        r = subprocess.run([sys.executable, "-c", "import llama_cpp; print('llama-cpp-python', llama_cpp.__version__)"], capture_output=True, text=True, timeout=30)
+        if r.returncode == 0:
+            log_ok(f"  {r.stdout.strip()}")
+        else:
+            log_warn(f"  llama-cpp-python: {r.stderr.strip()}")
+    except Exception as e:
+        log_warn(f"  llama-cpp-python check failed: {e}")
+
+    try:
         r = subprocess.run([sys.executable, "-c", "import torch; print('torch', torch.__version__, 'cuda:', torch.cuda.is_available())"], capture_output=True, text=True, timeout=30)
         if r.returncode == 0:
             log_ok(f"  {r.stdout.strip()}")
@@ -389,7 +398,9 @@ def ensure_python_deps():
     if not ask_yes("Доустановить Python зависимости (pip install -r requirements.txt)?"):
         log_warn("Пропущено — AI-сервис может не запуститься")
         return False
-    if not run_cmd([sys.executable, "-m", "pip", "install", "-r", req], timeout=3600, name="pip"):
+    if not run_cmd([sys.executable, "-m", "pip", "install", "-r", req,
+                    "--extra-index-url", "https://abetlen.github.io/llama-cpp-python/whl/cpu"],
+                   timeout=3600, name="pip"):
         log_error("pip install завершился с ошибкой")
         return False
     return check_python_deps()
@@ -439,7 +450,7 @@ def ensure_models():
         log_step("STEP 5/8", "Модели — OK")
         return True
     log_step("STEP 5/8", "Модели не найдены (~6 ГБ)")
-    if not ask_yes("Скачать модели сейчас (small-sd + Qwen3-1.7B, ~6 ГБ)?"):
+    if not ask_yes("Скачать модели сейчас (small-sd + Qwen2.5-1.5B, ~6 ГБ)?"):
         log_warn("Пропущено — генерация изображений и AI-чаты не будут работать")
         return False
     script = os.path.join(BASE_DIR, "setup_models.py")

@@ -312,9 +312,9 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
           <div className="flex items-center gap-3">
             <MessageSquareText size={20} className="text-discord-accent" />
             <span className="font-bold text-discord-white truncate">
-              {chats.find(c => c.id === activeChat)?.title || t('Чат с Qwen3')}
+              {chats.find(c => c.id === activeChat)?.title || t('Чат с Qwen2.5')}
             </span>
-            <span className="text-xs text-discord-muted">Qwen3 1.7B</span>
+            <span className="text-xs text-discord-muted">Qwen2.5 1.5B</span>
           </div>
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -335,7 +335,7 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
             <div className="flex flex-col items-center justify-center h-full text-discord-muted">
               <MessageSquareText size={48} className="mb-3 opacity-30" />
               <p className="text-lg font-medium">{t('Начните диалог')}</p>
-              <p className="text-sm mt-1">{t('Задайте любой вопрос нейросети Qwen3')}</p>
+              <p className="text-sm mt-1">{t('Задайте любой вопрос нейросети Qwen2.5')}</p>
             </div>
           )}
           {activeMessages.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
@@ -611,7 +611,7 @@ function TextGeneration({ onOpenChat }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex gap-2 items-center">
-          <span className="text-sm text-discord-text font-medium">Qwen3-1.7B</span>
+          <span className="text-sm text-discord-text font-medium">Qwen2.5-1.5B</span>
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <div className={`relative w-10 h-5 rounded-full transition-colors ${thinking ? 'bg-discord-green' : 'bg-discord-muted'}`}
               onClick={() => setThinking(!thinking)}>

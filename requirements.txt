@@ -8,5 +8,6 @@ pillow
 pydantic
 safetensors
 huggingface-hub
+llama-cpp-python>=0.2.90
 regex>=2025.10.22
 python-multipart
