@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { AtSign, SmilePlus, Pencil, Trash2 } from 'lucide-react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const EMOJI_LIST = ['👍', '❤️', '😂', '🎉', '🤔', '👀', '🔥', '💯', '✅', '❌', '🚀', '⭐'];
 
@@ -12,6 +13,7 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
   const [editContent, setEditContent] = useState(message.content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reactions, setReactions] = useState(message.reactions || []);
+  const { t } = useI18n();
 
   const isOwn = message.user_id === user?.id;
   const timestamp = new Date(message.created_at + 'Z').toLocaleTimeString('ru-RU', {
@@ -68,7 +70,7 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
       <button
         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
         className="p-1.5 hover:bg-discord-light/40 rounded-l-xl text-discord-muted hover:text-discord-text transition-colors"
-        title="Реакция"
+        title={t('Реакция')}
       >
         <SmilePlus size={16} />
       </button>
@@ -107,14 +109,14 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
 
   const deleteConfirm = showDeleteConfirm && (
     <div className={`absolute -top-16 ${isOwn ? 'left-4' : 'right-4'} bg-discord-darker border border-discord-light/20 rounded-xl p-3 shadow-xl z-20 w-64`}>
-      <p className="text-sm text-discord-white mb-2">Удалить сообщение?</p>
-      <p className="text-xs text-discord-muted mb-3">Это действие нельзя отменить.</p>
+      <p className="text-sm text-discord-white mb-2">{t('Удалить сообщение?')}</p>
+      <p className="text-xs text-discord-muted mb-3">{t('Это действие нельзя отменить.')}</p>
       <div className="flex gap-2">
         <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-2 py-1 text-xs text-discord-text bg-discord-light/40 rounded-lg hover:bg-discord-light/60 transition-colors">
-          Отмена
+          {t('Отмена')}
         </button>
         <button onClick={handleDelete} className="flex-1 px-2 py-1 text-xs text-white bg-discord-red rounded-lg hover:opacity-80 transition-colors">
-          Удалить
+          {t('Удалить')}
         </button>
       </div>
     </div>
@@ -134,9 +136,9 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
           <div className="text-right min-w-0">
             {showHeader && (
               <div className="flex items-baseline gap-2 justify-end mb-0.5">
-                {message.edited_at && <span className="text-[11px] text-discord-muted">(ред.)</span>}
+                {message.edited_at && <span className="text-[11px] text-discord-muted">{t('(ред.)')}</span>}
                 <span className="text-[11px] text-discord-muted">{timestamp}</span>
-                <span className="font-medium text-discord-accent text-[15px]">Вы</span>
+                <span className="font-medium text-discord-accent text-[15px]">{t('Вы')}</span>
               </div>
             )}
             {isEditing ? (
@@ -149,7 +151,7 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
                   className="bg-discord-dark border border-discord-light/20 px-3 py-1 rounded-xl text-discord-text text-sm focus:outline-none focus:border-discord-accent/50"
                   autoFocus
                 />
-                <button onClick={handleEdit} className="text-xs text-discord-accent hover:underline">OK</button>
+                <button onClick={handleEdit} className="text-xs text-discord-accent hover:underline">{t('ОК')}</button>
               </div>
             ) : (
               <div className="bg-discord-accent/20 border border-discord-accent/30 rounded-2xl rounded-tr-sm px-3 py-2 inline-block max-w-full">
@@ -160,7 +162,7 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
           </div>
           {showHeader ? (
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-discord-blurple to-discord-gradient2 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-lg">
-              {message.username?.[0]?.toUpperCase() || 'В'}
+              {message.username?.[0]?.toUpperCase() || t('В')}
             </div>
           ) : (
             <div className="w-10 flex-shrink-0" />
@@ -191,7 +193,7 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
           {showHeader && (
             <div className="flex items-baseline gap-2 mb-0.5">
               <span className="font-medium text-discord-white text-[15px]">{message.username}</span>
-              {message.edited_at && <span className="text-[11px] text-discord-muted">(ред.)</span>}
+              {message.edited_at && <span className="text-[11px] text-discord-muted">{t('(ред.)')}</span>}
               <span className="text-[11px] text-discord-muted">{timestamp}</span>
             </div>
           )}
@@ -205,7 +207,7 @@ function DmMessageItem({ message, user, showHeader, onUsernameClick }) {
                 className="flex-1 bg-discord-dark border border-discord-light/20 px-3 py-1 rounded-xl text-discord-text text-sm focus:outline-none focus:border-discord-accent/50"
                 autoFocus
               />
-              <button onClick={handleEdit} className="text-xs text-discord-accent hover:underline">OK</button>
+              <button onClick={handleEdit} className="text-xs text-discord-accent hover:underline">{t('ОК')}</button>
             </div>
           ) : (
             <p className="text-discord-text text-[15px] break-words">{message.content}</p>
@@ -225,6 +227,7 @@ export default function DmChat({ socket, user }) {
   const [typingUsers, setTypingUsers] = useState({});
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (dmId) {
@@ -344,7 +347,7 @@ export default function DmChat({ socket, user }) {
     <div className="flex flex-col h-full bg-discord-mid">
       <div className="h-16 px-4 flex items-center border-b border-discord-light/20 shadow-sm flex-shrink-0 bg-discord-mid/80 backdrop-blur-xl">
         <AtSign size={20} className="text-discord-accent mr-2" />
-        <h3 className="text-discord-white font-semibold">{otherUser?.username || 'Пользователь'}<span className="text-discord-muted font-normal text-sm">#{otherUser?.tag}</span></h3>
+        <h3 className="text-discord-white font-semibold">{otherUser?.username || t('Пользователь')}<span className="text-discord-muted font-normal text-sm">#{otherUser?.tag}</span></h3>
         <div className={`w-3 h-3 rounded-full ml-2 shadow-lg ${otherUser?.status === 'online' ? 'bg-discord-green shadow-discord-green/50' : 'bg-discord-muted'}`} />
       </div>
 
@@ -355,7 +358,7 @@ export default function DmChat({ socket, user }) {
               {otherUser?.username?.[0]?.toUpperCase() || '?'}
             </div>
             <h3 className="text-xl font-bold text-discord-white mb-2">{otherUser?.username}</h3>
-            <p className="text-discord-muted">Это начало вашей переписки.</p>
+            <p className="text-discord-muted">{t('Это начало вашей переписки.')}</p>
           </div>
         )}
 
@@ -374,7 +377,7 @@ export default function DmChat({ socket, user }) {
 
         {typingList.length > 0 && (
           <div className="px-4 py-1 text-xs text-discord-muted">
-            {typingList.join(', ')} {typingList.length === 1 ? 'печатает' : 'печатают'}...
+            {typingList.join(', ')} {typingList.length === 1 ? t('печатает') : t('печатают')}...
           </div>
         )}
 
@@ -387,7 +390,7 @@ export default function DmChat({ socket, user }) {
             type="text"
             value={newMessage}
             onChange={handleInputChange}
-            placeholder={`Написать @${otherUser?.username || 'пользователю'}`}
+            placeholder={t('Написать @{name}', { name: otherUser?.username || t('пользователю') })}
             className="flex-1 bg-transparent px-4 py-3 text-discord-text placeholder-discord-muted focus:outline-none text-sm"
           />
         </div>

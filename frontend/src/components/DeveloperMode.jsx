@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Settings, X, Volume2, VolumeX, Palette, User, CircleDollarSign, Shield,
   Zap, Eye, EyeOff, Code, ChevronDown, ChevronRight, Save, RotateCcw,
@@ -10,6 +11,7 @@ import {
   Image, Link, Filter, TestTube, FlaskConical, Play, Pause,
   SkipForward, SkipBack, Shuffle, Repeat, Star, Heart, ThumbsUp
 } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 const Toggle = ({ checked, onChange }) => (
   <button
@@ -37,15 +39,54 @@ const LogEntry = ({ log }) => (
   </div>
 );
 
-const DEV_PASSWORD_HASH = '8d969eef6ebad3420f4d32e0f8e9e8b5'; // md5 of "dev123"
+const AdminUserRow = ({ u, onRole, onSetCoins, onImpersonate, onDelete, currentUserId }) => {
+  const { t } = useI18n();
+  const [coins, setCoins] = useState(u.coins || 0);
+  useEffect(() => { setCoins(u.coins || 0); }, [u.coins]);
+  const roleColors = {
+    admin: 'bg-red-500/20 text-red-400 border-red-500/30',
+    moderator: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    user: 'bg-discord-light/20 text-discord-gray border-discord-light/30',
+  };
+  const roleLabels = { admin: 'Админ', moderator: 'Модер', user: 'Юзер' };
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-discord-dark border border-discord-light/10">
+      <div className="w-8 h-8 rounded-full bg-discord-blurple/30 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+        {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.username?.[0]?.toUpperCase() || 'U')}
+      </div>
+      <div className="min-w-[150px] mr-auto">
+        <div className="text-discord-white text-sm font-medium truncate">{u.username}<span className="text-discord-muted">#{u.tag}</span></div>
+        <div className="text-discord-gray text-[11px] truncate">{u.email}</div>
+      </div>
+      <select value={u.role} onChange={(e) => onRole(u, e.target.value)}
+        className={`text-xs rounded-lg px-2 py-1 border bg-discord-darker focus:outline-none ${roleColors[u.role] || roleColors.user}`}>
+        <option value="user">{t('Юзер')}</option>
+        <option value="moderator">{t('Модератор')}</option>
+        <option value="admin">{t('Админ')}</option>
+      </select>
+      <div className="flex items-center gap-1">
+        <input type="number" value={coins} onChange={(e) => setCoins(parseInt(e.target.value, 10) || 0)}
+          className="w-24 bg-discord-light/10 border border-discord-light/20 rounded-lg px-2 py-1 text-discord-white text-xs focus:outline-none focus:border-discord-blurple" />
+        <button onClick={() => onSetCoins(u, coins)}
+          className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg text-xs transition-colors">
+          <Save size={12} />
+        </button>
+      </div>
+      <button onClick={() => onImpersonate(u)}
+        className="px-2.5 py-1 bg-discord-blurple/20 hover:bg-discord-blurple/40 text-discord-blurple rounded-lg text-xs transition-colors">
+        {t('Войти')}
+      </button>
+      <button onClick={() => onDelete(u)} disabled={u.id === currentUserId}
+        className="px-2 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-lg text-xs transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+        <Trash2 size={12} />
+      </button>
+    </div>
+  );
+};
 
 const DeveloperMode = ({ user, onClose }) => {
-  const [authenticated, setAuthenticated] = useState(() => {
-    return sessionStorage.getItem('devModeAuth') === 'true';
-  });
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const { switchAccount } = useAuth();
+  const { t } = useI18n();
   const [activeSection, setActiveSection] = useState('debug');
   const [soundVolume, setSoundVolume] = useState(() => parseInt(localStorage.getItem('devSoundVolume') || '50'));
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('devMuted') === 'true');
@@ -68,7 +109,7 @@ const DeveloperMode = ({ user, onClose }) => {
   const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('devFontSize') || '14'));
   const [borderRadius, setBorderRadius] = useState(() => parseInt(localStorage.getItem('devBorderRadius') || '8'));
   const [animSpeed, setAnimSpeed] = useState(() => parseInt(localStorage.getItem('devAnimSpeed') || '100'));
-  const [statusText, setStatusText] = useState(() => localStorage.getItem('devStatus') || 'В сети');
+  const [statusText, setStatusText] = useState(() => localStorage.getItem('devStatus') || t('В сети'));
   const [featureFlags, setFeatureFlags] = useState(() => {
     try { return JSON.parse(localStorage.getItem('devFeatureFlags')) || {}; } catch { return {}; }
   });
@@ -81,6 +122,10 @@ const DeveloperMode = ({ user, onClose }) => {
   const [historyIdx, setHistoryIdx] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminSearch, setAdminSearch] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminMsg, setAdminMsg] = useState('');
   const logEndRef = useRef(null);
   const styleRef = useRef(null);
 
@@ -293,7 +338,7 @@ const DeveloperMode = ({ user, onClose }) => {
           if (cfg.animSpeed) setAnimSpeed(cfg.animSpeed);
           if (cfg.statusText) setStatusText(cfg.statusText);
           if (cfg.featureFlags) setFeatureFlags(cfg.featureFlags);
-        } catch { alert('Ошибка импорта'); }
+        } catch { alert(t('Ошибка импорта')); }
       };
       reader.readAsText(file);
     };
@@ -317,12 +362,12 @@ const DeveloperMode = ({ user, onClose }) => {
     setFontSize(14);
     setBorderRadius(8);
     setAnimSpeed(100);
-    setStatusText('В сети');
+    setStatusText(t('В сети'));
     setFeatureFlags({});
   };
 
   const handleClearStorage = () => {
-    if (confirm('Очистить всё localStorage?')) {
+    if (confirm(t('Очистить всё localStorage?'))) {
       localStorage.clear();
       setLocalStorageData([]);
     }
@@ -345,77 +390,89 @@ const DeveloperMode = ({ user, onClose }) => {
   }, [logs, logFilter]);
 
   const sections = [
-    { id: 'debug', label: 'Отладка', icon: Bug },
-    { id: 'console', label: 'Консоль', icon: Terminal },
-    { id: 'api', label: 'API Тестер', icon: Send },
-    { id: 'storage', label: 'Хранилище', icon: Database },
-    { id: 'sounds', label: 'Звуки', icon: Volume2 },
-    { id: 'theme', label: 'Тема и стиль', icon: Palette },
-    { id: 'user', label: 'Пользователь', icon: User },
-    { id: 'server', label: 'Сервер', icon: Globe },
-    { id: 'network', label: 'Сеть', icon: Wifi },
-    { id: 'features', label: 'Фичи', icon: Zap },
-    { id: 'tools', label: 'Инструменты', icon: Settings },
+    { id: 'debug', label: t('Отладка'), icon: Bug },
+    { id: 'console', label: t('Консоль'), icon: Terminal },
+    { id: 'api', label: t('API Тестер'), icon: Send },
+    { id: 'storage', label: t('Хранилище'), icon: Database },
+    { id: 'sounds', label: t('Звуки'), icon: Volume2 },
+    { id: 'theme', label: t('Тема и стиль'), icon: Palette },
+    { id: 'user', label: t('Пользователь'), icon: User },
+    { id: 'server', label: t('Сервер'), icon: Globe },
+    { id: 'network', label: t('Сеть'), icon: Wifi },
+    { id: 'features', label: t('Фичи'), icon: Zap },
+    { id: 'tools', label: t('Инструменты'), icon: Settings },
+    ...(user?.role === 'admin' ? [{ id: 'users', label: t('Пользователи'), icon: Users }] : []),
   ];
 
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    if (passwordInput === 'dev123') {
-      setAuthenticated(true);
-      sessionStorage.setItem('devModeAuth', 'true');
-      setPasswordError('');
-    } else {
-      setPasswordError('Неверный пароль');
-      setPasswordInput('');
+  const adminHeaders = () => ({
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json',
+  });
+
+  const loadAdminUsers = async (search = adminSearch) => {
+    setAdminLoading(true);
+    setAdminMsg('');
+    try {
+      const res = await fetch(`/api/auth/admin/users?search=${encodeURIComponent(search)}`, { headers: adminHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || t('Ошибка'));
+      setAdminUsers(data.users || []);
+    } catch (e) {
+      setAdminMsg(t('Ошибка:') + ' ' + e.message);
+    } finally {
+      setAdminLoading(false);
     }
   };
 
-  if (!authenticated) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div className="bg-discord-dark rounded-2xl shadow-2xl border border-discord-light/20 w-full max-w-sm p-8">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-              <Lock size={28} className="text-white" />
-            </div>
-            <h2 className="text-discord-white font-bold text-xl">Dev Mode</h2>
-            <p className="text-discord-gray text-sm mt-1">Введите пароль для доступа</p>
-          </div>
-          <form onSubmit={handlePasswordSubmit}>
-            <div className="relative mb-4">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={passwordInput}
-                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(''); }}
-                placeholder="Пароль"
-                autoFocus
-                className="w-full bg-discord-light/10 border border-discord-light/20 rounded-lg px-4 py-3 pr-12 text-discord-white text-sm focus:outline-none focus:border-discord-blurple"
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-discord-gray hover:text-discord-white">
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {passwordError && (
-              <div className="mb-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs text-center">
-                {passwordError}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <button type="button" onClick={onClose}
-                className="flex-1 px-4 py-2.5 bg-discord-light/10 hover:bg-discord-light/20 text-discord-gray rounded-lg text-sm transition-colors">
-                Отмена
-              </button>
-              <button type="submit"
-                className="flex-1 px-4 py-2.5 bg-discord-blurple hover:bg-discord-blurple/80 text-white rounded-lg text-sm transition-colors">
-                Войти
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (activeSection === 'users') loadAdminUsers('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
+
+  const adminSetRole = async (u, role) => {
+    try {
+      const res = await fetch('/api/auth/admin/set-role', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ userId: u.id, role }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || t('Ошибка'));
+      setAdminUsers(prev => prev.map(x => x.id === u.id ? { ...x, role } : x));
+        setAdminMsg(t('Роль {name} → {role}', { name: u.username, role }));
+    } catch (e) { setAdminMsg(t('Ошибка:') + ' ' + e.message); }
+  };
+
+  const adminSetCoins = async (u, coins) => {
+    try {
+      const res = await fetch('/api/auth/admin/set-coins', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ userId: u.id, coins }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || t('Ошибка'));
+      setAdminUsers(prev => prev.map(x => x.id === u.id ? { ...x, coins: data.coins } : x));
+        setAdminMsg(t('Монеты {name} → {coins}', { name: u.username, coins: data.coins }));
+    } catch (e) { setAdminMsg(t('Ошибка:') + ' ' + e.message); }
+  };
+
+  const adminDeleteUser = async (u) => {
+      if (!window.confirm(t('Удалить пользователя {name}#{tag}? Это необратимо.', { name: u.username, tag: u.tag }))) return;
+    try {
+      const res = await fetch('/api/auth/admin/delete-user', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ userId: u.id }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || t('Ошибка'));
+      setAdminUsers(prev => prev.filter(x => x.id !== u.id));
+      setAdminMsg(t('Пользователь {name} удалён', { name: u.username }));
+    } catch (e) { setAdminMsg(t('Ошибка:') + ' ' + e.message); }
+  };
+
+  const adminImpersonate = async (u) => {
+        if (!window.confirm(t('Войти в аккаунт {name}#{tag}?', { name: u.username, tag: u.tag }))) return;
+    try {
+      const res = await fetch('/api/auth/admin/impersonate', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ userId: u.id }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || t('Ошибка'));
+      localStorage.setItem('adminReturnToken', localStorage.getItem('token'));
+      localStorage.setItem('adminReturnName', user?.username || 'admin');
+      localStorage.setItem('adminReturnId', user?.id || '');
+      switchAccount(data.token);
+      onClose();
+    } catch (e) { setAdminMsg(t('Ошибка:') + ' ' + e.message); }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -464,15 +521,15 @@ const DeveloperMode = ({ user, onClose }) => {
           <div className="mt-2 pt-2 border-t border-discord-light/20 space-y-1">
             <button onClick={handleExportConfig}
               className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-discord-gray hover:text-discord-white hover:bg-discord-light/10 text-xs">
-              <Download size={12} /> Экспорт
+              <Download size={12} /> {t('Экспорт')}
             </button>
             <button onClick={handleImportConfig}
               className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-discord-gray hover:text-discord-white hover:bg-discord-light/10 text-xs">
-              <Upload size={12} /> Импорт
+              <Upload size={12} /> {t('Импорт')}
             </button>
             <button onClick={handleResetAll}
               className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs">
-              <RotateCcw size={12} /> Сбросить всё
+              <RotateCcw size={12} /> {t('Сбросить всё')}
             </button>
           </div>
         </div>
@@ -484,7 +541,7 @@ const DeveloperMode = ({ user, onClose }) => {
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-discord-muted" />
                 <input autoFocus value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Поиск по разделу..."
+                  placeholder={t('Поиск по разделу...')}
                   className="w-full bg-discord-light/10 border border-discord-light/20 rounded-lg pl-10 pr-4 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
               </div>
             </div>
@@ -495,15 +552,15 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'debug' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Bug size={20} className="text-green-400" /> Панель отладки
+                  <Bug size={20} className="text-green-400" /> {t('Панель отладки')}
                 </h3>
 
                 <div className="grid grid-cols-4 gap-3">
                   {[
                     { label: 'FPS', value: fps, color: fps > 50 ? 'text-green-400' : fps > 30 ? 'text-yellow-400' : 'text-red-400', icon: Activity },
-                    { label: 'Память', value: `${memoryUsage}MB`, color: 'text-discord-white', icon: HardDrive },
-                    { label: 'Пинг', value: `${networkLatency}ms`, color: networkLatency < 20 ? 'text-green-400' : 'text-yellow-400', icon: Wifi },
-                    { label: 'Аптайм', value: formatUptime(uptime), color: 'text-discord-blurple', icon: Clock },
+                    { label: t('Память'), value: `${memoryUsage}MB`, color: 'text-discord-white', icon: HardDrive },
+                    { label: t('Пинг'), value: `${networkLatency}ms`, color: networkLatency < 20 ? 'text-green-400' : 'text-yellow-400', icon: Wifi },
+                    { label: t('Аптайм'), value: formatUptime(uptime), color: 'text-discord-blurple', icon: Clock },
                   ].map(({ label, value, color, icon: Icon }) => (
                     <div key={label} className="bg-discord-darker rounded-xl p-3 border border-discord-light/10">
                       <div className="flex items-center gap-1.5 text-discord-gray text-xs mb-1"><Icon size={12} />{label}</div>
@@ -514,10 +571,10 @@ const DeveloperMode = ({ user, onClose }) => {
 
                 <div className="grid grid-cols-4 gap-3">
                   {[
-                    { label: 'Разрешение', value: `${window.innerWidth}x${window.innerHeight}` },
-                    { label: 'Отправлено', value: `${packetsSent} пакетов` },
-                    { label: 'Получено', value: `${packetsReceived} пакетов` },
-                    { label: 'Ошибки', value: errors, color: errors > 0 ? 'text-red-400' : 'text-green-400' },
+                    { label: t('Разрешение'), value: `${window.innerWidth}x${window.innerHeight}` },
+        { label: t('Отправлено'), value: t('{count} пакетов', { count: packetsSent }) },
+        { label: t('Получено'), value: t('{count} пакетов', { count: packetsReceived }) },
+                    { label: t('Ошибки'), value: errors, color: errors > 0 ? 'text-red-400' : 'text-green-400' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="bg-discord-darker rounded-xl p-3 border border-discord-light/10">
                       <div className="text-discord-gray text-xs mb-1">{label}</div>
@@ -527,7 +584,7 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2"><Terminal size={16} /> Состояние</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2"><Terminal size={16} /> {t('Состояние')}</h4>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-mono">
                     {[
                       ['User ID', user?.id, 'text-discord-accent'],
@@ -535,7 +592,7 @@ const DeveloperMode = ({ user, onClose }) => {
                       ['Role', user?.role, 'text-discord-blurple'],
                       ['Coins', user?.coins, 'text-yellow-400'],
                       ['Subscription', user?.subscriptionTier, 'text-green-400'],
-                      ['Theme', theme, 'text-pink-400'],
+                      ['Theme', theme, 'text-cyan-400'],
                       ['Sound', isMuted ? 'Muted' : `${soundVolume}%`, 'text-blue-400'],
                       ['Status', statusText, 'text-discord-white'],
                       ['Uptime', formatUptime(uptime), 'text-discord-blurple'],
@@ -550,18 +607,18 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2"><Code size={16} /> Быстрые действия</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2"><Code size={16} /> {t('Быстрые действия')}</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { label: 'JSON пользователя', fn: () => alert(JSON.stringify(user, null, 2)) },
+                      { label: t('JSON пользователя'), fn: () => alert(JSON.stringify(user, null, 2)) },
                       { label: 'Console.log', fn: () => console.log('[DEV]', { user, theme, soundVolume, fps, memoryUsage }) },
-                      { label: 'Тест ошибки', fn: () => { try { null.foo(); } catch(e) { console.error('[DEV TEST]', e.message); } } },
-                      { label: 'Тест предупреждения', fn: () => console.warn('[DEV TEST] Warning message') },
-                      { label: 'Перезагрузить страницу', fn: () => window.location.reload() },
-                      { label: 'Очистить кэш', fn: () => { caches.keys().then(n => n.forEach(k => caches.delete(k))); alert('Кэш очищен'); } },
-                      { label: 'Показать cookies', fn: () => alert(document.cookie || 'Нет cookies') },
-                      { label: 'Открыть DevTools', fn: () => alert('F12 → Console') },
-                      { label: 'Скопировать user ID', fn: () => { navigator.clipboard?.writeText(String(user?.id)); alert('Скопировано!'); } },
+                      { label: t('Тест ошибки'), fn: () => { try { null.foo(); } catch(e) { console.error('[DEV TEST]', e.message); } } },
+                      { label: t('Тест предупреждения'), fn: () => console.warn('[DEV TEST] Warning message') },
+                      { label: t('Перезагрузить страницу'), fn: () => window.location.reload() },
+                      { label: t('Очистить кэш'), fn: () => { caches.keys().then(n => n.forEach(k => caches.delete(k))); alert(t('Кэш очищен')); } },
+                      { label: t('Показать cookies'), fn: () => alert(document.cookie || t('Нет cookies')) },
+                      { label: t('Открыть DevTools'), fn: () => alert('F12 → Console') },
+                      { label: t('Скопировать user ID'), fn: () => { navigator.clipboard?.writeText(String(user?.id)); alert(t('Скопировано!')); } },
                     ].map(({ label, fn }) => (
                       <button key={label} onClick={fn}
                         className="px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors text-left">
@@ -578,7 +635,7 @@ const DeveloperMode = ({ user, onClose }) => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                    <Terminal size={20} className="text-yellow-400" /> Консоль
+                    <Terminal size={20} className="text-yellow-400" /> {t('Консоль')}
                   </h3>
                   <div className="flex items-center gap-2">
                     {['all', 'log', 'warn', 'error'].map(f => (
@@ -586,19 +643,19 @@ const DeveloperMode = ({ user, onClose }) => {
                         className={`px-3 py-1 rounded-lg text-xs transition-colors ${
                           logFilter === f ? 'bg-discord-blurple text-white' : 'bg-discord-light/10 text-discord-gray hover:text-discord-white'
                         }`}>
-                        {f === 'all' ? 'Все' : f.toUpperCase()} {f !== 'all' ? `(${logs.filter(l => l.type === f).length})` : `(${logs.length})`}
+                        {f === 'all' ? t('Все') : f.toUpperCase()} {f !== 'all' ? `(${logs.filter(l => l.type === f).length})` : `(${logs.length})`}
                       </button>
                     ))}
                     <button onClick={() => setLogs([])}
                       className="px-3 py-1 rounded-lg text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30">
-                      Очистить
+                      {t('Очистить')}
                     </button>
                   </div>
                 </div>
 
                 <div className="bg-discord-darker rounded-xl border border-discord-light/10 max-h-[500px] overflow-y-auto">
                   {filteredLogs.length === 0 ? (
-                    <div className="p-8 text-center text-discord-muted text-sm">Нет логов</div>
+                    <div className="p-8 text-center text-discord-muted text-sm">{t('Нет логов')}</div>
                   ) : (
                     filteredLogs.map((log, i) => (
                       <div key={i} onClick={() => setSelectedLog(selectedLog === i ? null : i)}
@@ -608,7 +665,7 @@ const DeveloperMode = ({ user, onClose }) => {
                           <div className="px-3 py-2 bg-discord-dark/50 text-xs text-discord-gray">
                             <pre className="whitespace-pre-wrap break-all">{log.message}</pre>
                             <button onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(log.message); }}
-                              className="mt-1 text-discord-blurple hover:underline">Копировать</button>
+                              className="mt-1 text-discord-blurple hover:underline">{t('Копировать')}</button>
                           </div>
                         )}
                       </div>
@@ -623,7 +680,7 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'api' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Send size={20} className="text-blue-400" /> API Тестер
+                  <Send size={20} className="text-blue-400" /> {t('API Тестер')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
@@ -640,7 +697,7 @@ const DeveloperMode = ({ user, onClose }) => {
                     <button onClick={handleApiRequest} disabled={apiLoading}
                       className="px-4 py-2 bg-discord-blurple hover:bg-discord-blurple/80 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2">
                       {apiLoading ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                      Отправить
+                      {t('Отправить')}
                     </button>
                   </div>
 
@@ -675,15 +732,15 @@ const DeveloperMode = ({ user, onClose }) => {
                 )}
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Быстрые запросы</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Быстрые запросы')}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { method: 'GET', path: '/api/auth/me', label: 'Профиль' },
-                      { method: 'GET', path: '/api/servers', label: 'Серверы' },
-                      { method: 'GET', path: '/api/friends', label: 'Друзья' },
-                      { method: 'GET', path: '/api/dm', label: 'ЛС' },
-                      { method: 'POST', path: '/api/auth/update-coins', label: 'Монеты', body: '{"userId":' + (user?.id || 1) + ',"coins":100}' },
-                      { method: 'GET', path: '/api/notifications', label: 'Уведомления' },
+                      { method: 'GET', path: '/api/auth/me', label: t('Профиль') },
+                      { method: 'GET', path: '/api/servers', label: t('Серверы') },
+                      { method: 'GET', path: '/api/friends', label: t('Друзья') },
+                      { method: 'GET', path: '/api/dm', label: t('ЛС') },
+                      { method: 'POST', path: '/api/auth/update-coins', label: t('Монеты'), body: '{"userId":' + (user?.id || 1) + ',"coins":100}' },
+                      { method: 'GET', path: '/api/notifications', label: t('Уведомления') },
                     ].map(({ method, path, label, body }) => (
                       <button key={label} onClick={() => { setApiMethod(method); setApiPath(path); if (body) setApiBody(body); }}
                         className="px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-left transition-colors">
@@ -701,7 +758,7 @@ const DeveloperMode = ({ user, onClose }) => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                    <Database size={20} className="text-orange-400" /> Хранилище
+                    <Database size={20} className="text-orange-400" /> {t('Хранилище')}
                   </h3>
                   <div className="flex items-center gap-2">
                     <button onClick={() => {
@@ -715,7 +772,7 @@ const DeveloperMode = ({ user, onClose }) => {
                       <RefreshCw size={14} />
                     </button>
                     <button onClick={handleClearStorage} className="px-3 py-1.5 rounded-lg text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30">
-                      Очистить всё
+                      {t('Очистить всё')}
                     </button>
                   </div>
                 </div>
@@ -724,14 +781,14 @@ const DeveloperMode = ({ user, onClose }) => {
                   <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-discord-muted" />
                     <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Фильтр ключей..."
+                      placeholder={t('Фильтр ключей...')}
                       className="w-full bg-discord-light/10 border border-discord-light/20 rounded-lg pl-9 pr-4 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
                   </div>
                 </div>
 
                 <div className="bg-discord-darker rounded-xl border border-discord-light/10 max-h-[500px] overflow-y-auto">
                   {filteredStorage.length === 0 ? (
-                    <div className="p-8 text-center text-discord-muted text-sm">Хранилище пусто</div>
+                    <div className="p-8 text-center text-discord-muted text-sm">{t('Хранилище пусто')}</div>
                   ) : (
                     filteredStorage.map(({ key, value }) => (
                       <div key={key} className="flex items-center justify-between px-4 py-2.5 border-b border-discord-light/5 hover:bg-discord-light/5 group">
@@ -741,11 +798,11 @@ const DeveloperMode = ({ user, onClose }) => {
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => navigator.clipboard?.writeText(value || '')}
-                            className="p-1 rounded hover:bg-discord-light/20 text-discord-gray hover:text-discord-white">
+                            className="p-1 rounded-lg hover:bg-discord-light/20 text-discord-gray hover:text-discord-white">
                             <Copy size={12} />
                           </button>
                           <button onClick={() => handleDeleteStorageKey(key)}
-                            className="p-1 rounded hover:bg-red-500/20 text-discord-gray hover:text-red-400">
+                            className="p-1 rounded-lg hover:bg-red-500/20 text-discord-gray hover:text-red-400">
                             <Trash2 size={12} />
                           </button>
                         </div>
@@ -755,16 +812,16 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Добавить запись</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Добавить запись')}</h4>
                   <div className="flex gap-2">
-                    <input id="newKey" placeholder="Ключ" className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
-                    <input id="newValue" placeholder="Значение" className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
+                    <input id="newKey" placeholder={t('Ключ')} className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
+                    <input id="newValue" placeholder={t('Значение')} className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
                     <button onClick={() => {
                       const k = document.getElementById('newKey')?.value;
                       const v = document.getElementById('newValue')?.value;
                       if (k) { localStorage.setItem(k, v || ''); setLocalStorageData(p => [...p, { key: k, value: v }]); }
                     }} className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm">
-                      Добавить
+                      {t('Добавить')}
                     </button>
                   </div>
                 </div>
@@ -775,12 +832,12 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'sounds' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Volume2 size={20} className="text-discord-blurple" /> Настройки звука
+                  <Volume2 size={20} className="text-discord-blurple" /> {t('Настройки звука')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-discord-white text-sm">Громкость</span>
+                    <span className="text-discord-white text-sm">{t('Громкость')}</span>
                     <span className="text-discord-blurple font-mono text-sm">{soundVolume}%</span>
                   </div>
                   <input type="range" min="0" max="100" value={soundVolume}
@@ -792,7 +849,7 @@ const DeveloperMode = ({ user, onClose }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {isMuted ? <VolumeX className="text-red-400" size={18} /> : <Volume2 className="text-green-400" size={18} />}
-                      <span className="text-discord-white text-sm">{isMuted ? 'Звук выключен' : 'Звук включён'}</span>
+                      <span className="text-discord-white text-sm">{isMuted ? t('Звук выключен') : t('Звук включён')}</span>
                     </div>
                     <button onClick={() => setIsMuted(!isMuted)}
                       className={`w-11 h-6 rounded-full transition-colors ${isMuted ? 'bg-red-500' : 'bg-green-500'}`}>
@@ -802,14 +859,14 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Тест звуков</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Тест звуков')}</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { type: 'message', label: 'Сообщение', icon: MessageSquare },
-                      { type: 'join', label: 'Вход', icon: Wifi },
-                      { type: 'leave', label: 'Выход', icon: WifiOff },
-                      { type: 'call', label: 'Звонок', icon: Phone },
-                      { type: 'notification', label: 'Уведомление', icon: Bell },
+                      { type: 'message', label: t('Сообщение'), icon: MessageSquare },
+                      { type: 'join', label: t('Вход'), icon: Wifi },
+                      { type: 'leave', label: t('Выход'), icon: WifiOff },
+                      { type: 'call', label: t('Звонок'), icon: Phone },
+                      { type: 'notification', label: t('Уведомление'), icon: Bell },
                     ].map(({ type, label, icon: Icon }) => (
                       <button key={type} onClick={() => handleTestSound(type)}
                         className="flex items-center gap-2 px-3 py-2.5 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors">
@@ -825,17 +882,17 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'theme' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Palette size={20} className="text-pink-400" /> Тема и стиль
+                  <Palette size={20} className="text-cyan-400" /> {t('Тема и стиль')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Тема оформления</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Тема оформления')}</h4>
                   <div className="grid grid-cols-4 gap-3">
                     {[
-                      { id: 'dark', label: 'Тёмная', color: 'bg-gray-800' },
-                      { id: 'midnight', label: 'Полночь', color: 'bg-indigo-950' },
-                      { id: 'purple', label: 'Фиолетовая', color: 'bg-purple-900' },
-                      { id: 'ocean', label: 'Океан', color: 'bg-blue-900' },
+                      { id: 'dark', label: t('Тёмная'), color: 'bg-gray-800' },
+                      { id: 'midnight', label: t('Полночь'), color: 'bg-sky-950' },
+                      { id: 'purple', label: t('Фиолетовая'), color: 'bg-sky-900' },
+                      { id: 'ocean', label: t('Океан'), color: 'bg-blue-900' },
                     ].map(({ id, label, color }) => (
                       <button key={id} onClick={() => setTheme(id)}
                         className={`p-3 rounded-xl border-2 transition-all ${
@@ -849,36 +906,36 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Размер шрифта: {fontSize}px</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Размер шрифта:')} {fontSize}px</h4>
                   <input type="range" min="10" max="24" value={fontSize}
                     onChange={(e) => setFontSize(parseInt(e.target.value))}
                     className="w-full h-2 bg-discord-light/20 rounded-lg appearance-none cursor-pointer accent-discord-blurple" />
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Скругление углов: {borderRadius}px</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Скругление углов:')} {borderRadius}px</h4>
                   <input type="range" min="0" max="24" value={borderRadius}
                     onChange={(e) => setBorderRadius(parseInt(e.target.value))}
                     className="w-full h-2 bg-discord-light/20 rounded-lg appearance-none cursor-pointer accent-discord-blurple" />
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Скорость анимаций: {animSpeed}%</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Скорость анимаций:')} {animSpeed}%</h4>
                   <input type="range" min="0" max="300" value={animSpeed}
                     onChange={(e) => setAnimSpeed(parseInt(e.target.value))}
                     className="w-full h-2 bg-discord-light/20 rounded-lg appearance-none cursor-pointer accent-discord-blurple" />
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Кастомный CSS</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Кастомный CSS')}</h4>
                   <textarea value={customCss} onChange={(e) => setCustomCss(e.target.value)}
-                    placeholder="/* Вставьте CSS здесь */&#10;body { font-size: 14px; }"
+                    placeholder={t('/* Вставьте CSS здесь */&#10;body { font-size: 14px; }')}
                     className="w-full bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-green-400 font-mono text-xs focus:outline-none focus:border-discord-blurple h-32 resize-none" />
                   <div className="flex items-center gap-2 mt-2">
                     <button onClick={() => setCustomCss('')} className="px-3 py-1.5 rounded-lg text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30">
-                      Очистить CSS
+                      {t('Очистить CSS')}
                     </button>
-                    <span className="text-discord-muted text-xs">CSS применяется мгновенно</span>
+                    <span className="text-discord-muted text-xs">{t('CSS применяется мгновенно')}</span>
                   </div>
                 </div>
               </div>
@@ -888,7 +945,7 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'user' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <User size={20} className="text-discord-accent" /> Управление пользователем
+                  <User size={20} className="text-discord-accent" /> {t('Управление пользователем')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
@@ -905,14 +962,14 @@ const DeveloperMode = ({ user, onClose }) => {
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                   <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2 text-sm">
-                    <CircleDollarSign size={16} className="text-yellow-400" /> Монеты
+                    <CircleDollarSign size={16} className="text-yellow-400" /> {t('Монеты')}
                   </h4>
                   <div className="flex items-center gap-2 mb-3">
                     <input type="number" value={quickCoins} onChange={(e) => setQuickCoins(parseInt(e.target.value) || 0)}
                       className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
                     <button onClick={() => handleAddCoins(quickCoins)}
                       className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-colors">
-                      Добавить
+                      {t('Добавить')}
                     </button>
                   </div>
                   <div className="grid grid-cols-5 gap-2">
@@ -927,7 +984,7 @@ const DeveloperMode = ({ user, onClose }) => {
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                   <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2 text-sm">
-                    <Shield size={16} className="text-discord-blurple" /> Роль
+                    <Shield size={16} className="text-discord-blurple" /> {t('Роль')}
                   </h4>
                   <div className="grid grid-cols-4 gap-2">
                     {['user', 'admin', 'moderator', 'owner'].map((role) => (
@@ -940,9 +997,9 @@ const DeveloperMode = ({ user, onClose }) => {
                             body: JSON.stringify({ userId: user.id, role })
                           });
                           const data = await res.json();
-                          if (data.success) { console.log(`[DEV] Role changed to: ${role}`); alert(`Роль изменена на: ${role}`); }
-                          else { alert(data.error || 'Ошибка'); }
-                        } catch (e) { console.error(e); alert('Ошибка сети'); }
+                          if (data.success) { console.log(`[DEV] Role changed to: ${role}`); alert(t('Роль изменена на: {role}', { role })); }
+                          else { alert(data.error || t('Ошибка')); }
+                        } catch (e) { console.error(e); alert(t('Ошибка сети')); }
                       }}
                         className={`px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
                           user?.role === role ? 'bg-discord-blurple text-white' : 'bg-discord-light/10 hover:bg-discord-light/20 text-discord-white'
@@ -955,7 +1012,7 @@ const DeveloperMode = ({ user, onClose }) => {
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                   <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2 text-sm">
-                    <Zap size={16} className="text-yellow-400" /> Подписка
+                    <Zap size={16} className="text-yellow-400" /> {t('Подписка')}
                   </h4>
                   <div className="grid grid-cols-4 gap-2">
                     {['free', 'privet', 'privet_plus'].map((tier) => (
@@ -968,9 +1025,9 @@ const DeveloperMode = ({ user, onClose }) => {
                             body: JSON.stringify({ tier })
                           });
                           const data = await res.json();
-                          if (data.success) { console.log(`[DEV] Subscription changed to: ${tier}`); alert(`Подписка изменена на: ${tier}`); }
-                          else { alert(data.error || 'Ошибка'); }
-                        } catch (e) { console.error(e); alert('Ошибка сети'); }
+                          if (data.success) { console.log(`[DEV] Subscription changed to: ${tier}`); alert(t('Подписка изменена на: {tier}', { tier })); }
+                          else { alert(data.error || t('Ошибка')); }
+                        } catch (e) { console.error(e); alert(t('Ошибка сети')); }
                       }}
                         className={`px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
                           user?.subscription === tier ? 'bg-discord-blurple text-white' : 'bg-discord-light/10 hover:bg-discord-light/20 text-discord-white'
@@ -983,14 +1040,14 @@ const DeveloperMode = ({ user, onClose }) => {
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                   <h4 className="text-discord-white font-semibold mb-3 flex items-center gap-2 text-sm">
-                    <Eye size={16} className="text-green-400" /> Статус
+                    <Eye size={16} className="text-green-400" /> {t('Статус')}
                   </h4>
                   <div className="flex items-center gap-2 mb-3">
                     <input value={statusText} onChange={(e) => setStatusText(e.target.value)}
                       className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
                   </div>
                   <div className="grid grid-cols-4 gap-2">
-                    {['В сети', 'Не беспокоить', 'Не активен', 'Скрытый'].map((s) => (
+                    {[t('В сети'), t('Не беспокоить'), t('Не активен'), t('Скрытый')].map((s) => (
                       <button key={s} onClick={() => setStatusText(s)}
                         className="px-2 py-1.5 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors">
                         {s}
@@ -1001,35 +1058,80 @@ const DeveloperMode = ({ user, onClose }) => {
               </div>
             )}
 
+            {/* === USERS (ADMIN) === */}
+            {activeSection === 'users' && (
+              <div className="space-y-4">
+                <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
+                  <Users size={20} className="text-discord-accent" /> {t('Управление пользователями')}
+                </h3>
+
+                <div className="flex items-center gap-2">
+                  <input value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') loadAdminUsers(adminSearch); }}
+                    placeholder={t('Поиск по нику, email, тегу или ID...')}
+                    className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-4 py-2 text-discord-white text-sm focus:outline-none focus:border-discord-blurple" />
+                  <button onClick={() => loadAdminUsers(adminSearch)} disabled={adminLoading}
+                    className="px-4 py-2 bg-discord-blurple hover:bg-discord-blurple/80 text-white rounded-lg text-sm transition-colors disabled:opacity-50">
+                    {adminLoading ? t('Поиск...') : t('Найти')}
+                  </button>
+                  <button onClick={() => loadAdminUsers('')} disabled={adminLoading}
+                    className="px-4 py-2 bg-discord-light/10 hover:bg-discord-light/20 text-discord-gray rounded-lg text-sm transition-colors disabled:opacity-50">
+                    <RefreshCw size={14} />
+                  </button>
+                </div>
+
+                {adminMsg && (
+                  <div className="px-3 py-2 bg-discord-blurple/10 border border-discord-blurple/20 rounded-lg text-discord-white text-xs">
+                    {adminMsg}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {adminUsers.length === 0 && !adminLoading && (
+                    <div className="text-center text-discord-muted text-sm py-8">{t('Пользователи не найдены')}</div>
+                  )}
+                  {adminUsers.map((u) => (
+                    <AdminUserRow key={u.id} u={u} currentUserId={user?.id}
+                      onRole={adminSetRole} onSetCoins={adminSetCoins}
+                      onImpersonate={adminImpersonate} onDelete={adminDeleteUser} />
+                  ))}
+                </div>
+
+                <div className="text-discord-muted text-xs">
+                  {t('Всего')}: {adminUsers.length}. {t('Пароли не отображаются.')}
+                </div>
+              </div>
+            )}
+
             {/* === SERVER === */}
             {activeSection === 'server' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Globe size={20} className="text-green-400" /> Настройки сервера
+                  <Globe size={20} className="text-green-400" /> {t('Настройки сервера')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">API Endpoint</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Конечная точка API')}</h4>
                   <div className="flex items-center gap-2">
                     <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)}
                       className="flex-1 bg-discord-light/10 border border-discord-light/20 rounded-lg px-3 py-2 text-discord-white font-mono text-sm focus:outline-none focus:border-discord-blurple" />
-                    <button onClick={() => { localStorage.setItem('devApiUrl', apiUrl); alert(`API URL сохранён: ${apiUrl}`); }}
+                    <button onClick={() => { localStorage.setItem('devApiUrl', apiUrl); alert(t('API URL сохранён: {url}', { url: apiUrl })); }}
                       className="px-4 py-2 bg-discord-blurple hover:bg-discord-blurple/80 text-white rounded-lg text-sm transition-colors">
-                      Применить
+                      {t('Применить')}
                     </button>
                   </div>
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Режим работы</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Режим работы')}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'Онлайн', icon: Wifi, color: 'text-green-400', bg: 'bg-green-500/10' },
-                      { label: 'Не беспокоить', icon: BellOff, color: 'text-red-400', bg: 'bg-red-500/10' },
-                      { label: 'Невидимка', icon: Eye, color: 'text-discord-gray', bg: 'bg-discord-light/10' },
-                      { label: 'Офлайн', icon: WifiOff, color: 'text-discord-gray', bg: 'bg-discord-light/10' },
+                      { label: t('Онлайн'), icon: Wifi, color: 'text-green-400', bg: 'bg-green-500/10' },
+                      { label: t('Не беспокоить'), icon: BellOff, color: 'text-red-400', bg: 'bg-red-500/10' },
+                      { label: t('Невидимка'), icon: Eye, color: 'text-discord-gray', bg: 'bg-discord-light/10' },
+                      { label: t('Офлайн'), icon: WifiOff, color: 'text-discord-gray', bg: 'bg-discord-light/10' },
                     ].map(({ label, icon: Icon, color, bg }) => (
-                      <button key={label} onClick={() => { setStatusText(label); alert(`Статус: ${label}`); }}
+                      <button key={label} onClick={() => { setStatusText(label); alert(t('Статус: {status}', { status: label })); }}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${bg} hover:bg-discord-light/20 transition-colors cursor-pointer`}>
                         <Icon size={16} className={color} />
                         <span className="text-discord-white text-xs">{label}</span>
@@ -1039,7 +1141,7 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Информация о приложении</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Информация о приложении')}</h4>
                   <div className="space-y-1.5 text-sm">
                     {[
                       ['React', React.version],
@@ -1050,7 +1152,7 @@ const DeveloperMode = ({ user, onClose }) => {
                       ['Platform', navigator.platform],
                       ['Language', navigator.language],
                       ['Cores', navigator.hardwareConcurrency],
-                      ['Cookies', document.cookie ? 'Есть' : 'Нет'],
+                      ['Cookies', document.cookie ? t('Есть') : t('Нет')],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between py-1 border-b border-discord-light/5">
                         <span className="text-discord-gray">{k}</span>
@@ -1066,22 +1168,22 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'network' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Wifi size={20} className="text-blue-400" /> Сеть и соединение
+                  <Wifi size={20} className="text-blue-400" /> {t('Сеть и соединение')}
                 </h3>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                    <div className="text-discord-gray text-xs mb-1">Пинг</div>
+                    <div className="text-discord-gray text-xs mb-1">{t('Пинг')}</div>
                     <div className={`text-2xl font-bold font-mono ${networkLatency < 20 ? 'text-green-400' : networkLatency < 50 ? 'text-yellow-400' : 'text-red-400'}`}>
                       {networkLatency}ms
                     </div>
                   </div>
                   <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                    <div className="text-discord-gray text-xs mb-1">Отправлено</div>
+                    <div className="text-discord-gray text-xs mb-1">{t('Отправлено')}</div>
                     <div className="text-2xl font-bold font-mono text-discord-white">{packetsSent}</div>
                   </div>
                   <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                    <div className="text-discord-gray text-xs mb-1">Получено</div>
+                    <div className="text-discord-gray text-xs mb-1">{t('Получено')}</div>
                     <div className="text-2xl font-bold font-mono text-discord-white">{packetsReceived}</div>
                   </div>
                 </div>
@@ -1091,20 +1193,20 @@ const DeveloperMode = ({ user, onClose }) => {
                     <span className="text-discord-white text-sm">WebSocket</span>
                     <span className="flex items-center gap-1.5 text-green-400 text-xs">
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      Подключено
+                      {t('Подключено')}
                     </span>
                   </div>
                   <div className="text-xs text-discord-gray font-mono">ws://localhost:5000/ws</div>
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Симуляция проблем</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Симуляция проблем')}</h4>
                   <div className="space-y-2">
                     {[
-                      { id: 'packetLoss', label: 'Потеря пакетов (5%)', desc: 'Случайные пакеты будут теряться' },
-                      { id: 'highLatency', label: 'Высокая задержка (500мс)', desc: 'Все запросы будут медленными' },
-                      { id: 'disconnect', label: 'Разрыв соединения', desc: 'WebSocket будет отключён' },
-                      { id: 'offline', label: 'Оффлайн режим', desc: 'Все запросы будут падать' },
+                      { id: 'packetLoss', label: t('Потеря пакетов (5%)'), desc: t('Случайные пакеты будут теряться') },
+                      { id: 'highLatency', label: t('Высокая задержка (500мс)'), desc: t('Все запросы будут медленными') },
+                      { id: 'disconnect', label: t('Разрыв соединения'), desc: t('WebSocket будет отключён') },
+                      { id: 'offline', label: t('Оффлайн режим'), desc: t('Все запросы будут падать') },
                     ].map(({ id, label, desc }) => (
                       <div key={id} className="flex items-center justify-between py-2">
                         <div>
@@ -1128,25 +1230,25 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'features' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Zap size={20} className="text-yellow-400" /> Фичи и эксперименты
+                  <Zap size={20} className="text-yellow-400" /> {t('Фичи и эксперименты')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Feature Flags</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Флаги функций')}</h4>
                   <div className="space-y-2">
                     {[
-                      { id: 'voice_calls', label: 'Голосовые звонки', desc: 'WebRTC звонки между пользователями' },
-                      { id: 'screen_share', label: 'Демонстрация экрана', desc: 'Совместный просмотр экрана' },
-                      { id: 'threads', label: 'Треды', desc: 'Вложенные обсуждения в каналах' },
-                      { id: 'forums', label: 'Форумы', desc: 'Посты и обсуждения' },
-                      { id: 'events', label: 'Мероприятия', desc: 'Создание и управление событиями' },
-                      { id: 'casino', label: 'Казино', desc: 'Мини-игры и ставки' },
-                      { id: 'shop', label: 'Магазин', desc: 'Покупка кастомных эмодзи' },
-                      { id: 'subscriptions', label: 'Подписки', desc: 'Платные подписки' },
-                      { id: 'sound_effects', label: 'Звуковые эффекты', desc: 'Звуки при действиях' },
-                      { id: 'notifications_v2', label: 'Уведомления v2', desc: 'Улучшенные уведомления' },
-                      { id: 'dark_mode', label: 'Тёмная тема', desc: 'Тёмная тема оформления' },
-                      { id: 'custom_emoji', label: 'Кастомные эмодзи', desc: 'Свои эмодзи в сообщениях' },
+                      { id: 'voice_calls', label: t('Голосовые звонки'), desc: t('WebRTC звонки между пользователями') },
+                      { id: 'screen_share', label: t('Демонстрация экрана'), desc: t('Совместный просмотр экрана') },
+                      { id: 'threads', label: t('Треды'), desc: t('Вложенные обсуждения в каналах') },
+                      { id: 'forums', label: t('Форумы'), desc: t('Посты и обсуждения') },
+                      { id: 'events', label: t('Мероприятия'), desc: t('Создание и управление событиями') },
+                      { id: 'casino', label: t('Казино'), desc: t('Мини-игры и ставки') },
+                      { id: 'shop', label: t('Магазин'), desc: t('Покупка кастомных эмодзи') },
+                      { id: 'subscriptions', label: t('Подписки'), desc: t('Платные подписки') },
+                      { id: 'sound_effects', label: t('Звуковые эффекты'), desc: t('Звуки при действиях') },
+                      { id: 'notifications_v2', label: t('Уведомления v2'), desc: t('Улучшенные уведомления') },
+                      { id: 'dark_mode', label: t('Тёмная тема'), desc: t('Тёмная тема оформления') },
+                      { id: 'custom_emoji', label: t('Кастомные эмодзи'), desc: t('Свои эмодзи в сообщениях') },
                     ].map(({ id, label, desc }) => (
                       <div key={id} className="flex items-center justify-between py-2.5 border-b border-discord-light/5">
                         <div>
@@ -1164,13 +1266,13 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Активные фичи</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Активные фичи')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(featureFlags).filter(([, v]) => v).map(([k]) => (
-                      <span key={k} className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">{k}</span>
+                      <span key={k} className="px-2 py-1 bg-green-500/20 text-green-400 rounded-lg text-xs">{k}</span>
                     ))}
                     {Object.values(featureFlags).every(v => !v) && (
-                      <span className="text-discord-muted text-xs">Нет активных фич</span>
+                      <span className="text-discord-muted text-xs">{t('Нет активных фич')}</span>
                     )}
                   </div>
                 </div>
@@ -1181,27 +1283,27 @@ const DeveloperMode = ({ user, onClose }) => {
             {activeSection === 'tools' && (
               <div className="space-y-4">
                 <h3 className="text-discord-white font-bold text-lg flex items-center gap-2">
-                  <Settings size={20} className="text-discord-gray" /> Инструменты
+                  <Settings size={20} className="text-discord-gray" /> {t('Инструменты')}
                 </h3>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Генерация тестовых данных</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Генерация тестовых данных')}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'Случайный пользователь', fn: () => {
+                      { label: t('Случайный пользователь'), fn: () => {
                         const names = ['AlphaWolf', 'CyberNinja', 'PixelMaster', 'DarkKnight', 'NeonGlow', 'StormChaser', 'IceBreaker', 'FireDancer'];
                         const name = names[Math.floor(Math.random() * names.length)];
                         const id = Math.floor(Math.random() * 999999);
                         console.log(`[DEV] Test user: ${name} (ID: ${id})`);
-                        alert(`Пользователь: ${name}\nID: ${id}`);
+                        alert(t('Пользователь: {name}\nID: {id}', { name, id }));
                       }},
-                      { label: 'Случайное сообщение', fn: () => {
-                        const msgs = ['Привет всем!', 'Кто хочет поиграть?', 'Отличная музыка!', 'Посмотрите этот мем', 'GG WP!', 'Спасибо за помощь', 'Новый сервер огонь!', 'Когда обновление?'];
+                      { label: t('Случайное сообщение'), fn: () => {
+                        const msgs = [t('Привет всем!'), t('Кто хочет поиграть?'), t('Отличная музыка!'), t('Посмотрите этот мем'), 'GG WP!', t('Спасибо за помощь'), t('Новый сервер огонь!'), t('Когда обновление?')];
                         console.log(`[DEV] Test message: ${msgs[Math.floor(Math.random() * msgs.length)]}`);
                         alert(msgs[Math.floor(Math.random() * msgs.length)]);
                       }},
-                      { label: 'Заполнить монетами', fn: () => handleAddCoins(99999) },
-                      { label: 'Генерировать спам', fn: () => {
+                      { label: t('Заполнить монетами'), fn: () => handleAddCoins(99999) },
+                      { label: t('Генерировать спам'), fn: () => {
                         for (let i = 0; i < 50; i++) console.log(`[DEV SPAM] Message #${i + 1}`);
                       }},
                     ].map(({ label, fn }) => (
@@ -1214,15 +1316,15 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Навигация</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Навигация')}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'На главную', fn: () => window.location.href = '/' },
-                      { label: 'На сервер', fn: () => window.location.href = '/server/1' },
-                      { label: 'На профиль', fn: () => window.location.href = '/settings' },
-                      { label: 'Перезагрузить', fn: () => window.location.reload() },
-                      { label: 'Очистить кэш', fn: () => { caches.keys().then(n => n.forEach(k => caches.delete(k))); alert('Готово'); } },
-                      { label: 'Открыть в новой вкладке', fn: () => window.open(window.location.href, '_blank') },
+                      { label: t('На главную'), fn: () => window.location.href = '/' },
+                      { label: t('На сервер'), fn: () => window.location.href = '/server/1' },
+                      { label: t('На профиль'), fn: () => window.location.href = '/settings' },
+                      { label: t('Перезагрузить'), fn: () => window.location.reload() },
+                      { label: t('Очистить кэш'), fn: () => { caches.keys().then(n => n.forEach(k => caches.delete(k))); alert(t('Готово')); } },
+                      { label: t('Открыть в новой вкладке'), fn: () => window.open(window.location.href, '_blank') },
                     ].map(({ label, fn }) => (
                       <button key={label} onClick={fn}
                         className="px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors text-left">
@@ -1233,36 +1335,36 @@ const DeveloperMode = ({ user, onClose }) => {
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Опасные зоны</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Опасные зоны')}</h4>
                   <div className="space-y-2">
-                    <button onClick={() => { if (confirm('Точно очистить все данные?')) { localStorage.clear(); alert('Готово'); } }}
+                    <button onClick={() => { if (confirm(t('Точно очистить все данные?'))) { localStorage.clear(); alert(t('Готово')); } }}
                       className="w-full text-left px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors cursor-pointer">
-                      <div className="text-red-400 text-sm font-medium">Очистить все данные</div>
-                      <div className="text-discord-muted text-xs mt-0.5">Удалит все данные из localStorage</div>
+                      <div className="text-red-400 text-sm font-medium">{t('Очистить все данные')}</div>
+                      <div className="text-discord-muted text-xs mt-0.5">{t('Удалит все данные из localStorage')}</div>
                     </button>
                     <button onClick={handleResetAll}
                       className="w-full text-left px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors cursor-pointer">
-                      <div className="text-red-400 text-sm font-medium">Сбросить настройки</div>
-                      <div className="text-discord-muted text-xs mt-0.5">Вернёт все настройки по умолчанию</div>
+                      <div className="text-red-400 text-sm font-medium">{t('Сбросить настройки')}</div>
+                      <div className="text-discord-muted text-xs mt-0.5">{t('Вернёт все настройки по умолчанию')}</div>
                     </button>
                     <button onClick={() => { localStorage.removeItem('discord_token'); window.location.href = '/'; }}
                       className="w-full text-left px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors cursor-pointer">
-                      <div className="text-red-400 text-sm font-medium">Выйти из аккаунта</div>
-                      <div className="text-discord-muted text-xs mt-0.5">Вы будете перенаправлены на главную</div>
+                      <div className="text-red-400 text-sm font-medium">{t('Выйти из аккаунта')}</div>
+                      <div className="text-discord-muted text-xs mt-0.5">{t('Вы будете перенаправлены на главную')}</div>
                     </button>
                   </div>
                 </div>
 
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
-                  <h4 className="text-discord-white font-semibold mb-3 text-sm">Экспорт / Импорт</h4>
+                  <h4 className="text-discord-white font-semibold mb-3 text-sm">{t('Экспорт / Импорт')}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={handleExportConfig}
                       className="flex items-center justify-center gap-2 px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors">
-                      <Download size={14} /> Экспорт конфига
+                      <Download size={14} /> {t('Экспорт конфига')}
                     </button>
                     <button onClick={handleImportConfig}
                       className="flex items-center justify-center gap-2 px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors">
-                      <Upload size={14} /> Импорт конфига
+                      <Upload size={14} /> {t('Импорт конфига')}
                     </button>
                     <button onClick={() => {
                       const data = JSON.stringify({ logs: logs.slice(-50), featureFlags, theme, soundVolume, isMuted }, null, 2);
@@ -1273,11 +1375,11 @@ const DeveloperMode = ({ user, onClose }) => {
                       a.click();
                     }}
                       className="flex items-center justify-center gap-2 px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors">
-                      <FileJson size={14} /> Экспорт логов
+                      <FileJson size={14} /> {t('Экспорт логов')}
                     </button>
                     <button onClick={() => navigator.clipboard?.writeText(JSON.stringify(user, null, 2))}
                       className="flex items-center justify-center gap-2 px-3 py-2 bg-discord-light/10 hover:bg-discord-light/20 rounded-lg text-discord-white text-xs transition-colors">
-                      <Copy size={14} /> Копировать user JSON
+                      <Copy size={14} /> {t('Копировать user JSON')}
                     </button>
                   </div>
                 </div>

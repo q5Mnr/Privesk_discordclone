@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Hash, Users, Search, Pin, X, Reply, Volume2, Send, Smile } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
 import { getChannelDraft, setChannelDraft } from '../utils/drafts';
+import { useI18n } from '../i18n/I18nContext';
 import MessageItem from './MessageItem';
 import VoiceChannel from './VoiceChannel';
 import EmojiPicker from './EmojiPicker';
@@ -28,6 +29,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
   const searchTimeoutRef = useRef(null);
   const draftSaveRef = useRef(null);
   const newMessageRef = useRef('');
+  const { t } = useI18n();
 
   useEffect(() => {
     newMessageRef.current = newMessage;
@@ -296,10 +298,10 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
         )}
         <div className="flex-1" />
         <div className="flex items-center gap-3 text-discord-gray">
-          <button onClick={loadPins} className="hover:text-discord-accent transition-colors" title="Закреплённые">
+          <button onClick={loadPins} className="hover:text-discord-accent transition-colors" title={t('Закреплённые')}>
             <Pin size={20} />
           </button>
-          <button onClick={() => setShowSearch(!showSearch)} className="hover:text-discord-accent transition-colors" title="Поиск">
+          <button onClick={() => setShowSearch(!showSearch)} className="hover:text-discord-accent transition-colors" title={t('Поиск')}>
             <Search size={20} />
           </button>
           <button onClick={() => setShowMembers(!showMembers)} className="hover:text-discord-accent transition-colors">
@@ -317,7 +319,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Поиск сообщений..."
+              placeholder={t('Поиск сообщений...')}
               autoFocus
               className="flex-1 bg-transparent text-discord-text text-sm focus:outline-none placeholder-discord-muted"
             />
@@ -327,7 +329,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
           </div>
           {searchResults.length > 0 && (
             <div className="mt-2 max-h-60 overflow-y-auto">
-              <p className="text-xs text-discord-muted mb-1">Найдено: {searchResults.length}</p>
+              <p className="text-xs text-discord-muted mb-1">{t('Найдено:')} {searchResults.length}</p>
               {searchResults.map(msg => (
                 <div
                   key={msg.id}
@@ -357,15 +359,15 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
       {showPins && (
         <div className="px-4 py-3 border-b border-discord-light/20 bg-discord-darker">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-bold text-discord-white flex items-center gap-1.5"><Pin size={14} /> Закреплённые</h4>
+            <h4 className="text-sm font-bold text-discord-white flex items-center gap-1.5"><Pin size={14} /> {t('Закреплённые')}</h4>
             <button onClick={() => setShowPins(false)} className="text-discord-gray hover:text-discord-accent"><X size={16} /></button>
           </div>
           {pinnedMessages.length === 0 ? (
-            <p className="text-xs text-discord-muted">Нет закреплённых сообщений</p>
+            <p className="text-xs text-discord-muted">{t('Нет закреплённых сообщений')}</p>
           ) : (
             <div className="max-h-60 overflow-y-auto space-y-1">
               {pinnedMessages.map(msg => (
-                <div key={msg.id} className="px-3 py-2 bg-discord-darkest rounded text-sm">
+                <div key={msg.id} className="px-3 py-2 bg-discord-darkest rounded-lg text-sm">
                   <span className="text-white font-medium">{msg.username}</span>
                   <span className="text-discord-muted text-xs ml-1">#{msg.tag}</span>
                   <p className="text-discord-text mt-0.5">{msg.content}</p>
@@ -383,8 +385,8 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-discord-blurple/20 to-discord-accent/20 flex items-center justify-center mb-4 border border-discord-light/20">
               <Hash size={32} className="text-discord-accent" />
             </div>
-            <h3 className="text-xl font-bold text-discord-white mb-2">Добро пожаловать в #{channel.name}!</h3>
-            <p className="text-discord-gray">Это начало канала.</p>
+                <h3 className="text-xl font-bold text-discord-white mb-2">{t('Добро пожаловать в #{name}!', { name: channel.name })}</h3>
+            <p className="text-discord-gray">{t('Это начало канала.')}</p>
           </div>
         )}
 
@@ -413,7 +415,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
       {typingUsers.length > 0 && (
         <div className="px-4 py-1 text-sm text-discord-gray flex items-center gap-1">
           <span className="typing-indicator text-discord-accent">●●●</span>
-          <span>{typingUsers.map(u => u.username).join(', ')} печатает...</span>
+          <span>{typingUsers.map(u => u.username).join(', ')} {t('печатает')}...</span>
         </div>
       )}
 
@@ -421,7 +423,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
       {replyTo && (
         <div className="px-4 py-2 bg-discord-darker border-t border-discord-accent/30 flex items-center gap-2">
           <Reply size={14} className="text-discord-accent flex-shrink-0" />
-          <span className="text-xs text-discord-muted">Ответ на</span>
+          <span className="text-xs text-discord-muted">{t('Ответ на')}</span>
           <span className="text-xs text-discord-white font-medium">{replyTo.username}#{replyTo.tag}</span>
           <span className="text-xs text-discord-gray truncate flex-1">{replyTo.content}</span>
           <button onClick={() => setReplyTo(null)} className="text-discord-gray hover:text-discord-accent">
@@ -435,7 +437,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
         {mentionQuery !== null && getFilteredMembers().length > 0 && (
           <div className="absolute bottom-full left-4 right-4 mb-1 bg-discord-darker border border-discord-light/20 rounded-2xl shadow-2xl overflow-hidden z-30 max-h-56 overflow-y-auto">
             <div className="px-3 py-1.5 text-[11px] font-bold text-discord-accent uppercase tracking-wider border-b border-discord-light/20">
-              Упомянуть участника
+              {t('Упомянуть участника')}
             </div>
             {getFilteredMembers().map((m, i) => (
               <button
@@ -466,7 +468,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
             onChange={handleInputChange}
             onKeyDown={handleMentionKeyDown}
             onInput={handleTyping}
-            placeholder={replyTo ? `Ответить ${replyTo.username}...` : `Написать в #${channel.name}`}
+            placeholder={replyTo ? t('Ответить {name}...', { name: replyTo.username }) : t('Написать в #{name}', { name: channel.name })}
             className="flex-1 bg-transparent px-4 py-3 text-discord-text placeholder-discord-muted focus:outline-none"
           />
           <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -490,7 +492,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
         </form>
         ) : (
         <div className="bg-discord-light/50 rounded-2xl px-4 py-3 text-discord-muted text-sm text-center border border-discord-light/30">
-          У вас нет прав отправлять сообщения в этом канале
+          {t('У вас нет прав отправлять сообщения в этом канале')}
         </div>
         )}
       </div>

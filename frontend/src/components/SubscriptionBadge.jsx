@@ -1,6 +1,8 @@
 import React from 'react';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function SubscriptionBadge({ tier }) {
+  const { t } = useI18n();
   if (!tier || tier === 'free') return null;
 
   const config = {
@@ -11,7 +13,7 @@ export default function SubscriptionBadge({ tier }) {
     },
     privet_plus: {
       label: 'Privet Plus',
-      gradient: 'from-purple-500 to-pink-500',
+      gradient: 'from-sky-500 to-cyan-500',
       icon: '👑',
     },
     sosiska: {
@@ -26,10 +28,10 @@ export default function SubscriptionBadge({ tier }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r ${c.gradient} text-white shadow-sm`}
-      title={c.label}
+      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[9px] font-bold bg-gradient-to-r ${c.gradient} text-white shadow-sm`}
+      title={t(c.label)}
     >
-      {c.icon} {c.label}
+      {c.icon} {t(c.label)}
     </span>
   );
 }

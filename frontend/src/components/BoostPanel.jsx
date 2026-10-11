@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Zap, Users, Clock, Coins } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const TIER_COLORS = ['', '#3b82f6', '#8b5cf6', '#f59e0b'];
 const TIER_NAMES = ['Нет буста', 'Базовый', 'Продвинутый', 'Максимальный'];
@@ -13,6 +14,7 @@ export default function BoostPanel({ serverId, onClose, user }) {
   const [myBoost, setMyBoost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
+  const { t } = useI18n();
 
   const load = async () => {
     try {
@@ -38,16 +40,16 @@ export default function BoostPanel({ serverId, onClose, user }) {
       if (res.success) {
         await load();
       } else {
-        alert(res.error || 'Ошибка');
+        alert(res.error || t('Ошибка'));
       }
-    } catch (e) { alert('Ошибка сервера'); }
+    } catch (e) { alert(t('Ошибка сервера')); }
     setBuying(false);
   };
 
   const tiers = [
-    { tier: 1, name: 'Базовый', cost: 500, days: 7, color: '#3b82f6', icon: '⭐', perks: ['+10% монет за сообщения', 'Буст-значок'] },
-    { tier: 2, name: 'Продвинутый', cost: 1500, days: 14, color: '#8b5cf6', icon: '🌟', perks: ['+25% монет', 'Буст-значок', 'Приоритет в голосовых'] },
-    { tier: 3, name: 'Максимальный', cost: 3000, days: 30, color: '#f59e0b', icon: '💫', perks: ['+50% монет', 'Буст-значок', 'Приоритет', 'Эксклюзивный эмодзи'] },
+    { tier: 1, name: t('Базовый'), cost: 500, days: 7, color: '#3b82f6', icon: '⭐', perks: [t('+10% монет за сообщения'), t('Буст-значок')] },
+    { tier: 2, name: t('Продвинутый'), cost: 1500, days: 14, color: '#8b5cf6', icon: '🌟', perks: [t('+25% монет'), t('Буст-значок'), t('Приоритет в голосовых')] },
+    { tier: 3, name: t('Максимальный'), cost: 3000, days: 30, color: '#f59e0b', icon: '💫', perks: [t('+50% монет'), t('Буст-значок'), t('Приоритет'), t('Эксклюзивный эмодзи')] },
   ];
 
   return (
@@ -59,9 +61,9 @@ export default function BoostPanel({ serverId, onClose, user }) {
           <div className="flex items-center gap-3">
             <Zap size={24} style={{ color: tier >= 3 ? '#f59e0b' : tier >= 2 ? '#8b5cf6' : tier >= 1 ? '#3b82f6' : '#6b7280' }} />
             <div>
-              <h2 className="text-lg font-bold text-discord-white">Буст сервера</h2>
+              <h2 className="text-lg font-bold text-discord-white">{t('Буст сервера')}</h2>
               <p className="text-xs text-discord-muted">
-                {total > 0 ? `${TIER_ICONS[tier]} Уровень ${tier}: ${TIER_NAMES[tier]} (${total} буст${total > 1 ? (total < 5 ? 'а' : 'ов') : ''})` : 'Пока нет бустов'}
+                {total > 0 ? t('{icon} Уровень {tier}: {name} ({total} буст{suf})', { icon: TIER_ICONS[tier], tier, name: TIER_NAMES[tier], total, suf: total > 1 ? (total < 5 ? 'а' : 'ов') : '' }) : t('Пока нет бустов')}
               </p>
             </div>
           </div>
@@ -74,45 +76,45 @@ export default function BoostPanel({ serverId, onClose, user }) {
             <div className="rounded-xl p-4 border" style={{ backgroundColor: TIER_COLORS[myBoost.tier] + '15', borderColor: TIER_COLORS[myBoost.tier] + '40' }}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{TIER_ICONS[myBoost.tier]}</span>
-                <span className="text-sm font-bold text-discord-white">{TIER_NAMES[myBoost.tier]} буст активен</span>
+                <span className="text-sm font-bold text-discord-white">{t(TIER_NAMES[myBoost.tier])} {t('буст активен')}</span>
               </div>
               <p className="text-xs text-discord-muted">
-                Истекает: {new Date(myBoost.expires_at).toLocaleDateString('ru-RU')}
+                {t('Истекает:')} {new Date(myBoost.expires_at).toLocaleDateString('ru-RU')}
               </p>
             </div>
           )}
 
           {/* Boost tiers */}
-          {tiers.map(t => (
-            <div key={t.tier} className={`rounded-xl p-4 border transition-all ${myBoost?.tier === t.tier ? 'ring-2' : 'hover:border-discord-accent/30'}`}
-              style={{ borderColor: t.color + '40', backgroundColor: t.color + '08', ringColor: t.color }}>
+          {tiers.map(tierItem => (
+            <div key={tierItem.tier} className={`rounded-xl p-4 border transition-all ${myBoost?.tier === tierItem.tier ? 'ring-2' : 'hover:border-discord-accent/30'}`}
+              style={{ borderColor: tierItem.color + '40', backgroundColor: tierItem.color + '08', ringColor: tierItem.color }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{t.icon}</span>
+                  <span className="text-xl">{tierItem.icon}</span>
                   <div>
-                    <p className="text-sm font-bold text-discord-white">{t.name}</p>
-                    <p className="text-[10px] text-discord-muted">{t.days} дней</p>
+                    <p className="text-sm font-bold text-discord-white">{tierItem.name}</p>
+                    <p className="text-[10px] text-discord-muted">{tierItem.days} {t('дней')}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold" style={{ color: t.color }}>{t.cost} 🪙</p>
+                  <p className="text-sm font-bold" style={{ color: tierItem.color }}>{tierItem.cost} 🪙</p>
                 </div>
               </div>
               <div className="space-y-1 mb-3">
-                {t.perks.map((p, i) => (
+                {tierItem.perks.map((p, i) => (
                   <p key={i} className="text-xs text-discord-gray flex items-center gap-1.5">
-                    <span style={{ color: t.color }}>✓</span> {p}
+                    <span style={{ color: tierItem.color }}>✓</span> {p}
                   </p>
                 ))}
               </div>
-              <button onClick={() => handleBuy(t.tier)} disabled={buying || (myBoost && myBoost.tier >= t.tier)}
+              <button onClick={() => handleBuy(tierItem.tier)} disabled={buying || (myBoost && myBoost.tier >= tierItem.tier)}
                 className={`w-full py-2 rounded-lg text-sm font-medium transition-all ${
-                  myBoost && myBoost.tier >= t.tier
+                  myBoost && myBoost.tier >= tierItem.tier
                     ? 'bg-discord-gray/10 text-discord-muted cursor-not-allowed'
                     : 'text-white hover:opacity-90'
                 }`}
-                style={myBoost?.tier >= t.tier ? {} : { backgroundColor: t.color }}>
-                {myBoost && myBoost.tier >= t.tier ? 'Текущий/лучше' : `Купить за ${t.cost} 🪙`}
+                style={myBoost?.tier >= tierItem.tier ? {} : { backgroundColor: tierItem.color }}>
+                {myBoost && myBoost.tier >= tierItem.tier ? t('Текущий/лучше') : t('Купить за {cost} 🪙', { cost: tierItem.cost })}
               </button>
             </div>
           ))}
@@ -120,7 +122,7 @@ export default function BoostPanel({ serverId, onClose, user }) {
           {/* Boosters list */}
           {boosts.length > 0 && (
             <div>
-              <p className="text-xs text-discord-muted font-bold uppercase tracking-wider mb-2">Бустеры сервера</p>
+              <p className="text-xs text-discord-muted font-bold uppercase tracking-wider mb-2">{t('Бустеры сервера')}</p>
               <div className="space-y-1">
                 {boosts.map(b => (
                   <div key={b.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-discord-darker/50 border border-discord-light/10">
@@ -128,7 +130,7 @@ export default function BoostPanel({ serverId, onClose, user }) {
                       {b.avatar ? <img src={b.avatar} alt="" className="w-full h-full object-cover" /> : b.username?.[0]?.toUpperCase()}
                     </div>
                     <span className="text-sm text-discord-white flex-1">{b.username}</span>
-                    <span className="text-xs" style={{ color: TIER_COLORS[b.tier] }}>{TIER_ICONS[b.tier]} {TIER_NAMES[b.tier]}</span>
+                    <span className="text-xs" style={{ color: TIER_COLORS[b.tier] }}>{TIER_ICONS[b.tier]} {t(TIER_NAMES[b.tier])}</span>
                     <span className="text-[10px] text-discord-muted">
                       <Clock size={10} className="inline mr-0.5" />
                       {new Date(b.expires_at).toLocaleDateString('ru-RU')}
@@ -141,8 +143,8 @@ export default function BoostPanel({ serverId, onClose, user }) {
 
           {total === 0 && !loading && (
             <div className="text-center py-6">
-              <p className="text-discord-muted text-sm">Бустите сервер, чтобы получить бонусы!</p>
-              <p className="text-discord-muted text-xs mt-1">Бусты помогают серверу расти</p>
+              <p className="text-discord-muted text-sm">{t('Бустите сервер, чтобы получить бонусы!')}</p>
+              <p className="text-discord-muted text-xs mt-1">{t('Бусты помогают серверу расти')}</p>
             </div>
           )}
         </div>

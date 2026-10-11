@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, MessageCircle, UserPlus, UserMinus } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 const RARITY_STYLES = {
   common: { label: 'Обычный', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20' },
   rare: { label: 'Редкий', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-  epic: { label: 'Эпический', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+  epic: { label: 'Эпический', color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20' },
   legendary: { label: 'Легендарный', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-  secret: { label: 'Секретный', color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+  secret: { label: 'Секретный', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
   admin: { label: 'Админ', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
 };
 
@@ -14,6 +15,7 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [equippedEmoji, setEquippedEmoji] = useState([]);
+  const { t } = useI18n();
 
   useEffect(() => {
     loadProfile();
@@ -75,7 +77,7 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
     return (
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
         <div className="bg-discord-darker border border-discord-light/20 rounded-2xl w-80 p-6 text-center" onClick={e => e.stopPropagation()}>
-          <div className="text-discord-muted">Загрузка...</div>
+          <div className="text-discord-muted">{t('Загрузка...')}</div>
         </div>
       </div>
     );
@@ -83,7 +85,7 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
 
   if (!profile) return null;
 
-  const themeStyle = profile.profile_theme ? { background: profile.profile_theme } : { background: 'linear-gradient(135deg, #6c5ce7, #a855f7)' };
+  const themeStyle = profile.profile_theme ? { background: profile.profile_theme } : { background: 'linear-gradient(135deg, #3b82f6, #22d3ee)' };
   const hasBorder = !!profile.profile_border;
   const borderStyle = hasBorder ? { border: `4px solid ${profile.profile_border}`, boxShadow: `0 0 16px ${profile.profile_border}55` } : {};
   const nameStyle = profile.name_color ? (profile.name_color.startsWith('linear') ? { background: profile.name_color, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } : { color: profile.name_color }) : { color: 'white' };
@@ -118,7 +120,7 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
             <h3 className="text-xl font-bold" style={nameStyle}>{profile.username}</h3>
             <span className="text-discord-muted text-sm">#{profile.tag}</span>
             {profile.level >= 2 && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border"
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-lg text-[9px] font-bold border"
                 style={{
                   backgroundColor: profile.level >= 50 ? 'rgba(245,158,11,0.15)' : profile.level >= 25 ? 'rgba(139,92,246,0.15)' : profile.level >= 10 ? 'rgba(59,130,246,0.15)' : 'rgba(107,114,128,0.15)',
                   borderColor: profile.level >= 50 ? 'rgba(245,158,11,0.3)' : profile.level >= 25 ? 'rgba(139,92,246,0.3)' : profile.level >= 10 ? 'rgba(59,130,246,0.3)' : 'rgba(107,114,128,0.3)',
@@ -131,10 +133,10 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
               <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[10px] font-bold shadow-lg shadow-blue-500/30">PRIVET</span>
             )}
             {profile.subscription === 'privet_plus' && (
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-bold shadow-lg shadow-purple-500/30">PRIVET+</span>
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 text-white text-[10px] font-bold shadow-lg shadow-sky-500/30">PRIVET+</span>
             )}
             {profile.subscription === 'sosiska' && (
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold shadow-lg shadow-orange-500/30">🌭 СОСИСКА</span>
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold shadow-lg shadow-orange-500/30">{t('🌭 СОСИСКА')}</span>
             )}
           </div>
 
@@ -143,9 +145,9 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
               {equippedEmoji.map((e, i) => {
                 const rarity = RARITY_STYLES[e.rarity] || RARITY_STYLES.common;
                 return (
-                  <div key={i} className={`flex items-center gap-1 px-2 py-1 rounded-lg ${rarity.bg} border ${rarity.border}`} title={`${e.name} — ${rarity.label}`}>
+                  <div key={i} className={`flex items-center gap-1 px-2 py-1 rounded-lg ${rarity.bg} border ${rarity.border}`} title={`${e.name} — ${t(rarity.label)}`}>
                     <span className="text-lg">{e.emoji}</span>
-                    <span className={`text-[10px] font-bold ${rarity.color}`}>{rarity.label}</span>
+                    <span className={`text-[10px] font-bold ${rarity.color}`}>{t(rarity.label)}</span>
                   </div>
                 );
               })}
@@ -154,7 +156,7 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
 
           <div className="flex items-center gap-2 mb-3">
             <div className={`w-3 h-3 rounded-full ${statusColors[profile.status] || 'bg-gray-500'}`} />
-            <span className="text-sm text-discord-gray">{statusLabels[profile.status] || 'Неизвестно'}</span>
+            <span className="text-sm text-discord-gray">{t(statusLabels[profile.status] || 'Неизвестно')}</span>
           </div>
 
           {profile.custom_status && (
@@ -167,15 +169,15 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
 
           {equippedEmoji.length > 0 && (
             <div className="mb-3 bg-discord-dark/50 rounded-lg p-2">
-              <div className="flex items-center gap-1 text-[10px] text-discord-muted mb-1">Коллекция</div>
+              <div className="flex items-center gap-1 text-[10px] text-discord-muted mb-1">{t('Коллекция')}</div>
               <div className="flex items-center gap-1 flex-wrap">
                 {equippedEmoji.map((e, i) => {
                   const rarity = RARITY_STYLES[e.rarity] || RARITY_STYLES.common;
                   return (
-                    <div key={i} className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${rarity.bg} border ${rarity.border}`}>
+                    <div key={i} className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg ${rarity.bg} border ${rarity.border}`}>
                       <span className="text-sm">{e.emoji}</span>
                       <span className={`text-[9px] font-bold ${rarity.color}`}>
-                        {rarity.label}
+                        {t(rarity.label)}
                       </span>
                     </div>
                   );
@@ -186,7 +188,7 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
 
           {profile.mutualServers?.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs font-bold text-discord-gray uppercase mb-1">Общие серверы</p>
+              <p className="text-xs font-bold text-discord-gray uppercase mb-1">{t('Общие серверы')}</p>
               <div className="flex gap-1">
                 {profile.mutualServers.map(s => (
                   <div key={s.id} className="w-8 h-8 rounded-full bg-discord-light flex items-center justify-center text-xs text-white font-bold" title={s.name}>
@@ -198,17 +200,17 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
           )}
 
           <p className="text-[11px] text-discord-muted mb-4">
-            Участник с {new Date(profile.created_at + 'Z').toLocaleDateString('ru-RU')}
+            {t('Участник с')} {new Date(profile.created_at + 'Z').toLocaleDateString('ru-RU')}
           </p>
 
           {/* Actions */}
           <div className="flex gap-2">
             <button
               onClick={() => onMessage?.(profile.id)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-discord-light hover:bg-discord-lighter rounded text-sm text-discord-text transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-discord-light hover:bg-discord-lighter rounded-lg text-sm text-discord-text transition-colors"
             >
               <MessageCircle size={16} />
-              Написать
+              {t('Написать')}
             </button>
             <button
               onClick={handleFriendAction}
@@ -221,11 +223,11 @@ export default function UserProfileCard({ userId, onClose, onMessage }) {
               }`}
             >
               {profile.friendship === 'accepted' ? (
-                <><UserMinus size={16} /> Удалить из друзей</>
+                <><UserMinus size={16} /> {t('Удалить из друзей')}</>
               ) : profile.friendship === 'pending' ? (
-                'Заявка отправлена'
+                t('Заявка отправлена')
               ) : (
-                <><UserPlus size={16} /> Добавить в друзья</>
+                <><UserPlus size={16} /> {t('Добавить в друзья')}</>
               )}
             </button>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, MessageCircle, Clock, Tag, X } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function ForumView({ channel, server, user, onOpenThread }) {
   const [posts, setPosts] = useState([]);
@@ -11,6 +12,7 @@ export default function ForumView({ channel, server, user, onOpenThread }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState(null);
   const [allTags, setAllTags] = useState([]);
+  const { t } = useI18n();
 
   useEffect(() => {
     loadPosts();
@@ -60,10 +62,10 @@ export default function ForumView({ channel, server, user, onOpenThread }) {
   const timeAgo = (date) => {
     if (!date) return '';
     const diff = (Date.now() - new Date(date + 'Z').getTime()) / 1000;
-    if (diff < 60) return 'только что';
-    if (diff < 3600) return `${Math.floor(diff/60)}м назад`;
-    if (diff < 86400) return `${Math.floor(diff/3600)}ч назад`;
-    return `${Math.floor(diff/86400)}д назад`;
+    if (diff < 60) return t('только что');
+    if (diff < 3600) return t('{n}м назад', { n: Math.floor(diff/60) });
+    if (diff < 86400) return t('{n}ч назад', { n: Math.floor(diff/3600) });
+    return t('{n}д назад', { n: Math.floor(diff/86400) });
   };
 
   return (
@@ -79,14 +81,14 @@ export default function ForumView({ channel, server, user, onOpenThread }) {
         )}
         <div className="flex-1" />
         <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium transition-all shadow-lg">
-          <Plus size={16} /> Создать пост
+          <Plus size={16} /> {t('Создать пост')}
         </button>
       </div>
 
       {allTags.length > 0 && (
         <div className="px-4 py-2 flex gap-1.5 flex-wrap border-b border-black/30">
           <button onClick={() => setFilterTag(null)} className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${!filterTag ? 'bg-discord-blurple text-white' : 'bg-discord-light text-discord-gray hover:text-white'}`}>
-            Все
+            {t('Все')}
           </button>
           {allTags.map(tag => (
             <button key={tag.id} onClick={() => setFilterTag(filterTag === tag.id ? null : tag.id)}
@@ -101,10 +103,10 @@ export default function ForumView({ channel, server, user, onOpenThread }) {
       {showCreate && (
         <div className="px-4 py-3 border-b border-black/30 bg-discord-darker">
           <form onSubmit={handleCreate}>
-            <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Заголовок поста"
-              className="w-full bg-discord-light rounded px-3 py-2 text-discord-text text-sm mb-2 focus:outline-none" autoFocus />
-            <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Описание (необязательно)"
-              className="w-full bg-discord-light rounded px-3 py-2 text-discord-text text-sm mb-2 focus:outline-none resize-none h-20" />
+            <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder={t('Заголовок поста')}
+              className="w-full bg-discord-light rounded-lg px-3 py-2 text-discord-text text-sm mb-2 focus:outline-none" autoFocus />
+            <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder={t('Описание (необязательно)')}
+              className="w-full bg-discord-light rounded-lg px-3 py-2 text-discord-text text-sm mb-2 focus:outline-none resize-none h-20" />
             {allTags.length > 0 && (
               <div className="flex gap-1.5 mb-2 flex-wrap">
                 {allTags.map(tag => (
@@ -117,8 +119,8 @@ export default function ForumView({ channel, server, user, onOpenThread }) {
               </div>
             )}
             <div className="flex gap-2">
-              <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-1.5 text-sm text-discord-gray hover:text-white transition-colors">Отмена</button>
-              <button type="submit" disabled={!newTitle.trim()} className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium disabled:opacity-50 transition-all shadow-lg">Опубликовать</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-1.5 text-sm text-discord-gray hover:text-white transition-colors">{t('Отмена')}</button>
+              <button type="submit" disabled={!newTitle.trim()} className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium disabled:opacity-50 transition-all shadow-lg">{t('Опубликовать')}</button>
             </div>
           </form>
         </div>
@@ -128,8 +130,8 @@ export default function ForumView({ channel, server, user, onOpenThread }) {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <span className="text-4xl mb-3">💬</span>
-            <h3 className="text-xl font-bold text-white mb-1">Нет постов</h3>
-            <p className="text-discord-gray text-sm">Создайте первый пост в этом форуме</p>
+            <h3 className="text-xl font-bold text-white mb-1">{t('Нет постов')}</h3>
+            <p className="text-discord-gray text-sm">{t('Создайте первый пост в этом форуме')}</p>
           </div>
         ) : (
           <div className="space-y-2">

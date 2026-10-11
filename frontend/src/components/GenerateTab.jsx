@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Download, ImageIcon, MessageSquareText, Maximize2, Minimize2, X, Plus, Trash2, MessageCircle, Music, Volume2, Play, Square, Zap } from 'lucide-react';
 import { apiPost, apiGet, apiDelete, apiPut } from '../utils/api';
 import RenderMessage from './RenderMessage';
+import { useI18n } from '../i18n/I18nContext';
 
 const STREAM_URL = `http://${window.location.hostname}:3001/api/generate/text/stream`;
 
 function ThinkingIndicator() {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-3 py-2">
       <div className="relative flex-shrink-0">
@@ -15,7 +17,7 @@ function ThinkingIndicator() {
         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full animate-ping" />
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-yellow-400/80 font-medium">Думаю...</span>
+        <span className="text-xs text-yellow-400/80 font-medium">{t('Думаю...')}</span>
         <div className="flex gap-1">
           <span className="w-1.5 h-1.5 bg-discord-green rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
           <span className="w-1.5 h-1.5 bg-discord-green rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -27,13 +29,14 @@ function ThinkingIndicator() {
 }
 
 function ThinkingBlock({ text, streaming }) {
+  const { t } = useI18n();
   const ref = useRef(null);
   useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [text]);
   return (
     <div className="mb-2 border border-discord-yellow/20 rounded-xl overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-1.5 bg-discord-yellow/10 border-b border-discord-yellow/20">
         <Sparkles size={12} className="text-discord-yellow animate-pulse" />
-        <span className="text-xs text-discord-yellow/80 font-medium">Рассуждение</span>
+        <span className="text-xs text-discord-yellow/80 font-medium">{t('Рассуждение')}</span>
         {streaming && <span className="w-1.5 h-3 bg-discord-yellow animate-pulse ml-auto" />}
       </div>
       <div ref={ref} className="px-3 py-2 text-xs text-discord-muted italic bg-discord-yellow/5 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
@@ -68,6 +71,7 @@ function ChatMessage({ msg }) {
 }
 
 function StreamMessage({ streamMsg }) {
+  const { t } = useI18n();
   return (
     <div className="flex justify-start">
       <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-discord-dark border border-discord-light/20 px-4 py-3">
@@ -81,7 +85,7 @@ function StreamMessage({ streamMsg }) {
         ) : (
           <div className="text-xs text-discord-muted italic flex items-center gap-2">
             <span className="w-1.5 h-3 bg-discord-accent animate-pulse" />
-            Печатаю ответ...
+            {t('Печатаю ответ...')}
           </div>
         )}
       </div>
@@ -90,12 +94,13 @@ function StreamMessage({ streamMsg }) {
 }
 
 function ChatSidebar({ chats, activeId, onSelect, onNew, onDelete }) {
+  const { t } = useI18n();
   return (
     <div className="w-56 bg-discord-dark border-r border-discord-light/20 flex flex-col flex-shrink-0">
       <div className="p-3 border-b border-discord-light/20">
         <button onClick={onNew}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium rounded-xl transition-all shadow-lg">
-          <Plus size={16} />Новый чат
+          <Plus size={16} />{t('Новый чат')}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -114,7 +119,7 @@ function ChatSidebar({ chats, activeId, onSelect, onNew, onDelete }) {
           </div>
         ))}
         {chats.length === 0 && (
-          <div className="px-3 py-4 text-center text-xs text-discord-muted">Нет чатов</div>
+          <div className="px-3 py-4 text-center text-xs text-discord-muted">{t('Нет чатов')}</div>
         )}
       </div>
     </div>
@@ -131,6 +136,7 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
   const [streamMsg, setStreamMsg] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const { t } = useI18n();
 
   const activeMessages = chats.find(c => c.id === activeChat)?.messages || [];
 
@@ -169,13 +175,13 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
         const data = await res.json();
         if (data.text_model) return true;
         if (data.text_error) throw new Error(data.text_error);
-        setLoadingMsg(`Модель загружается... (${Math.round((i + 1) * interval / 1000)}с)`);
+        setLoadingMsg(t('Модель загружается... ({s}с)', { s: Math.round((i + 1) * interval / 1000) }));
       } catch (e) {
         if (e.message.includes('model failed') || e.message.includes('not found')) throw e;
       }
       await new Promise(r => setTimeout(r, interval));
     }
-    throw new Error('Тайм-аут загрузки модели (5 мин)');
+    throw new Error(t('Тайм-аут загрузки модели (5 мин)'));
   };
 
   const streamSend = async (userMsg, useThinking) => {
@@ -253,7 +259,7 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
       saveMessage(activeChat, assistantMsg);
     } catch (err) {
       if (err.message.includes('still loading') || err.message.includes('503')) {
-        setLoadingMsg('Модель загружается, ожидание...');
+        setLoadingMsg(t('Модель загружается, ожидание...'));
         try {
           await pollHealth();
           setStreamMsg(null);
@@ -263,13 +269,13 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
           saveMessage(activeChat, assistantMsg);
         } catch (retryErr) {
           setError(retryErr.message);
-          const errMsg = { role: 'assistant', content: 'Ошибка: ' + retryErr.message, error: true };
+          const errMsg = { role: 'assistant', content: t('Ошибка:') + ' ' + retryErr.message, error: true };
           updateChat(activeChat, c => ({ ...c, messages: [...c.messages, errMsg] }));
           saveMessage(activeChat, errMsg);
         }
       } else {
         setError(err.message);
-        const errMsg = { role: 'assistant', content: 'Ошибка: ' + err.message, error: true };
+        const errMsg = { role: 'assistant', content: t('Ошибка:') + ' ' + err.message, error: true };
         updateChat(activeChat, c => ({ ...c, messages: [...c.messages, errMsg] }));
         saveMessage(activeChat, errMsg);
       }
@@ -306,7 +312,7 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
           <div className="flex items-center gap-3">
             <MessageSquareText size={20} className="text-discord-accent" />
             <span className="font-bold text-discord-white truncate">
-              {chats.find(c => c.id === activeChat)?.title || 'Чат с Qwen3'}
+              {chats.find(c => c.id === activeChat)?.title || t('Чат с Qwen3')}
             </span>
             <span className="text-xs text-discord-muted">Qwen3 1.7B</span>
           </div>
@@ -316,7 +322,7 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
                 onClick={() => setThinking(!thinking)}>
                 <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${thinking ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </div>
-              <span className="text-xs text-discord-muted">Thinking</span>
+              <span className="text-xs text-discord-muted">{t('Размышление')}</span>
             </label>
             <button onClick={onClose} className="p-2 hover:bg-discord-light/30 rounded-xl text-discord-muted hover:text-discord-white transition-all">
               <X size={20} />
@@ -328,8 +334,8 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
           {activeMessages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-discord-muted">
               <MessageSquareText size={48} className="mb-3 opacity-30" />
-              <p className="text-lg font-medium">Начните диалог</p>
-              <p className="text-sm mt-1">Задайте любой вопрос нейросети Qwen3</p>
+              <p className="text-lg font-medium">{t('Начните диалог')}</p>
+              <p className="text-sm mt-1">{t('Задайте любой вопрос нейросети Qwen3')}</p>
             </div>
           )}
           {activeMessages.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
@@ -355,11 +361,11 @@ function FullScreenChat({ onClose, chats, setChats, loadChatMessages, createChat
           {error && <div className="mb-2 text-xs text-discord-red">{error}</div>}
           <div className="flex gap-2">
             <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-              placeholder="Введите сообщение..." disabled={generating}
+              placeholder={t('Введите сообщение...')} disabled={generating}
               className="flex-1 bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 disabled:opacity-50" />
             <button onClick={handleSend} disabled={generating || !input.trim()}
               className="px-5 py-2.5 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all text-sm shadow-lg">
-              {generating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Отправить'}
+              {generating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : t('Отправить')}
             </button>
           </div>
         </div>
@@ -380,6 +386,7 @@ function ImageGeneration() {
   const [currentImage, setCurrentImage] = useState(null);
   const [error, setError] = useState('');
   const resultRef = useRef(null);
+  const { t } = useI18n();
 
   const handleGenerate = async () => {
     if (!prompt.trim() || generating) return;
@@ -407,34 +414,34 @@ function ImageGeneration() {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Промпт</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Промпт')}</label>
         <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={handleKeyDown}
-          placeholder="Опишите изображение..." rows={2} disabled={generating}
+          placeholder={t('Опишите изображение...')} rows={2} disabled={generating}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 resize-none transition-colors" />
       </div>
       <div>
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Негативный промпт</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Негативный промпт')}</label>
         <input value={negativePrompt} onChange={e => setNegativePrompt(e.target.value)}
-          placeholder="Чего избежать..." disabled={generating}
+          placeholder={t('Чего избежать...')} disabled={generating}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Ширина</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Ширина')}</label>
           <select value={width} onChange={e => setWidth(Number(e.target.value))}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors">
             {[256, 384, 512, 640, 768, 896, 1024].map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Высота</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Высота')}</label>
           <select value={height} onChange={e => setHeight(Number(e.target.value))}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors">
             {[256, 384, 512, 640, 768, 896, 1024].map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Шаги</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Шаги')}</label>
           <input type="number" min={1} max={50} value={steps} onChange={e => setSteps(Number(e.target.value))}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
         </div>
@@ -444,14 +451,14 @@ function ImageGeneration() {
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Seed (-1=случайный)</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Seed (-1=случайный)')}</label>
           <input type="number" value={seed} onChange={e => setSeed(Number(e.target.value))}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
         </div>
       </div>
       <button onClick={handleGenerate} disabled={generating || !prompt.trim()}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all shadow-lg">
-        {generating ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Генерация...</>) : (<><Sparkles size={18} />Сгенерировать</>)}
+        {generating ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('Генерация...')}</>) : (<><Sparkles size={18} />{t('Сгенерировать')}</>)}
       </button>
       {error && <div className="bg-discord-red/20 border border-discord-red/30 text-discord-red px-4 py-2 rounded-xl text-sm">{error}</div>}
       {currentImage && (
@@ -472,7 +479,7 @@ function ImageGeneration() {
       {!generating && !currentImage && (
         <div className="text-center py-8 text-discord-muted">
           <ImageIcon size={32} className="mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Введите промпт и нажмите Сгенерировать</p>
+          <p className="text-sm">{t('Введите промпт и нажмите Сгенерировать')}</p>
         </div>
       )}
     </div>
@@ -490,6 +497,7 @@ function TextGeneration({ onOpenChat }) {
   const [loadingMsg, setLoadingMsg] = useState('');
   const [history, setHistory] = useState([]);
   const [streamMsg, setStreamMsg] = useState(null);
+  const { t } = useI18n();
 
   const pollHealth = async (retries = 60, interval = 5000) => {
     for (let i = 0; i < retries; i++) {
@@ -501,13 +509,13 @@ function TextGeneration({ onOpenChat }) {
         const data = await res.json();
         if (data.text_model) return true;
         if (data.text_error) throw new Error(data.text_error);
-        setLoadingMsg(`Модель загружается... (${Math.round((i + 1) * interval / 1000)}с)`);
+        setLoadingMsg(t('Модель загружается... ({s}с)', { s: Math.round((i + 1) * interval / 1000) }));
       } catch (e) {
         if (e.message.includes('model failed') || e.message.includes('not found')) throw e;
       }
       await new Promise(r => setTimeout(r, interval));
     }
-    throw new Error('Тайм-аут загрузки модели (5 мин)');
+    throw new Error(t('Тайм-аут загрузки модели (5 мин)'));
   };
 
   const streamGenerate = async (userMsg, useThinking) => {
@@ -574,7 +582,7 @@ function TextGeneration({ onOpenChat }) {
       }]);
     } catch (err) {
       if (err.message.includes('still loading') || err.message.includes('503')) {
-        setLoadingMsg('Модель загружается, ожидание...');
+        setLoadingMsg(t('Модель загружается, ожидание...'));
         try {
           await pollHealth();
           setStreamMsg(null);
@@ -609,29 +617,29 @@ function TextGeneration({ onOpenChat }) {
               onClick={() => setThinking(!thinking)}>
               <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${thinking ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </div>
-            <span className="text-xs text-discord-muted">Рассуждение</span>
+            <span className="text-xs text-discord-muted">{t('Рассуждение')}</span>
           </label>
         </div>
         <button onClick={onOpenChat}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium rounded-xl transition-all shadow-lg">
           <Maximize2 size={14} />
-          Полный чат
+          {t('Полный чат')}
         </button>
       </div>
       <div>
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Сообщение</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Сообщение')}</label>
         <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={handleKeyDown}
-          placeholder={thinking ? "Задайте вопрос с рассуждением..." : "Введите сообщение..."} rows={3} disabled={generating}
+          placeholder={thinking ? t('Задайте вопрос с рассуждением...') : t('Введите сообщение...')} rows={3} disabled={generating}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 resize-none transition-colors" />
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Макс. токенов</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Макс. токенов')}</label>
           <input type="number" min={1} max={4096} value={maxTokens} onChange={e => setMaxTokens(Number(e.target.value))}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Temperature</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Температура')}</label>
           <input type="number" min={0} max={2} step={0.1} value={temperature} onChange={e => setTemperature(Number(e.target.value))}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
         </div>
@@ -643,7 +651,7 @@ function TextGeneration({ onOpenChat }) {
       </div>
       <button onClick={handleGenerate} disabled={generating || !prompt.trim()}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all shadow-lg">
-        {generating ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{loadingMsg || 'Генерация...'}</>) : (<><MessageSquareText size={18} />Отправить</>)}
+        {generating ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{loadingMsg || t('Генерация...')}</>) : (<><MessageSquareText size={18} />{t('Отправить')}</>)}
       </button>
       {error && <div className="bg-discord-red/20 border border-discord-red/30 text-discord-red px-4 py-2 rounded-xl text-sm">{error}</div>}
       {generating && streamMsg && (
@@ -660,7 +668,7 @@ function TextGeneration({ onOpenChat }) {
         <div className="space-y-3 max-h-[400px] overflow-y-auto">
           {history.map((msg, i) => (
             <div key={i} className="bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-3 border-l-2 border-discord-accent">
-              <span className="text-xs font-bold uppercase text-discord-accent">Нейросеть</span>
+              <span className="text-xs font-bold uppercase text-discord-accent">{t('Нейросеть')}</span>
               {msg.thinking && (
                 <ThinkingBlock text={msg.thinking} streaming={false} />
               )}
@@ -672,7 +680,7 @@ function TextGeneration({ onOpenChat }) {
       {history.length === 0 && !generating && (
         <div className="text-center py-8 text-discord-muted">
           <MessageSquareText size={32} className="mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Введите сообщение или откройте полный чат</p>
+          <p className="text-sm">{t('Введите сообщение или откройте полный чат')}</p>
         </div>
       )}
     </div>
@@ -1100,6 +1108,7 @@ function TrackPlayer({ blob, name, onDownload }) {
   const audioRef = useRef(null);
   const canvasRef = useRef(null);
   const animRef = useRef(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!blob) return;
@@ -1162,7 +1171,7 @@ function TrackPlayer({ blob, name, onDownload }) {
 
       if (i <= progressIdx) {
         const grad = ctx.createLinearGradient(x, y, x, y + barH);
-        grad.addColorStop(0, '#a855f7');
+        grad.addColorStop(0, '#22d3ee');
         grad.addColorStop(1, '#ec4899');
         ctx.fillStyle = grad;
       } else {
@@ -1190,7 +1199,7 @@ function TrackPlayer({ blob, name, onDownload }) {
     <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3">
         <button onClick={togglePlay}
-          className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center hover:opacity-90 transition-all flex-shrink-0">
+          className="w-10 h-10 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 flex items-center justify-center hover:opacity-90 transition-all flex-shrink-0">
           {playing ? <Square size={16} className="text-white" /> : <Play size={16} className="text-white ml-0.5" />}
         </button>
         <div className="flex-1 min-w-0">
@@ -1205,7 +1214,7 @@ function TrackPlayer({ blob, name, onDownload }) {
               const pct = (e.clientX - rect.left) / rect.width;
               audioRef.current.currentTime = pct * duration;
             }}>
-            <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
+            <div className="h-full bg-gradient-to-r from-sky-500 to-cyan-500 rounded-full transition-all"
               style={{ width: `${progress}%` }} />
           </div>
         </div>
@@ -1219,7 +1228,7 @@ function TrackPlayer({ blob, name, onDownload }) {
 
       <button onClick={onDownload}
         className="w-full py-1.5 rounded-lg bg-discord-light/10 border border-discord-light/20 text-xs text-discord-white hover:bg-discord-light/20 transition-all flex items-center justify-center gap-1.5">
-        <Download size={12} /> Скачать WAV
+        <Download size={12} /> {t('Скачать WAV')}
       </button>
     </div>
   );
@@ -1237,6 +1246,7 @@ function MusicGeneration({ user }) {
   const [generatedTrack, setGeneratedTrack] = useState(null);
   const [trackName, setTrackName] = useState('');
   const [musicDescription, setMusicDescription] = useState('');
+  const { t } = useI18n();
 
   const isPrivetPlus = user?.subscription === 'privet_plus' || user?.subscription === 'sosiska';
   const isPrivet = user?.subscription === 'privet' || isPrivetPlus;
@@ -1244,13 +1254,13 @@ function MusicGeneration({ user }) {
   const handleTTS = useCallback(() => {
     if (!ttsText.trim() || generating) return;
     if (!('speechSynthesis' in window)) {
-      setStatus('SpeechSynthesis не поддерживается в этом браузере');
+      setStatus(t('SpeechSynthesis не поддерживается в этом браузере'));
       setTimeout(() => setStatus(''), 3000);
       return;
     }
     window.speechSynthesis.cancel();
     setGenerating(true);
-    setStatus('Озвучиваю...');
+    setStatus(t('Озвучиваю...'));
 
     const voice = VOICE_PRESETS.find(v => v.id === selectedVoice) || VOICE_PRESETS[0];
     const utter = new SpeechSynthesisUtterance(ttsText);
@@ -1269,12 +1279,12 @@ function MusicGeneration({ user }) {
 
     utter.onend = () => {
       setGenerating(false);
-      setStatus('Готово!');
+      setStatus(t('Готово!'));
       setTimeout(() => setStatus(''), 2000);
     };
     utter.onerror = () => {
       setGenerating(false);
-      setStatus('Ошибка озвучки');
+      setStatus(t('Ошибка озвучки'));
       setTimeout(() => setStatus(''), 2000);
     };
 
@@ -1285,7 +1295,7 @@ function MusicGeneration({ user }) {
     if (generating) return;
     const maxDur = isPrivetPlus ? 180 : 30;
     if (musicDuration > maxDur) {
-      setStatus(`Макс. ${maxDur}с для вашей подписки`);
+      setStatus(t('Макс. {s}с для вашей подписки', { s: maxDur }));
       setTimeout(() => setStatus(''), 3000);
       return;
     }
@@ -1293,24 +1303,24 @@ function MusicGeneration({ user }) {
     setGenerating(true);
     setGeneratedTrack(null);
     const useDesc = desc || (activeSection === 'describe' ? musicDescription : '');
-    setStatus(`Генерирую трек (${musicDuration}с)...`);
+    setStatus(t('Генерирую трек ({s}с)...', { s: musicDuration }));
 
     try {
       if (typeof OfflineAudioContext === 'undefined') {
-        throw new Error('OfflineAudioContext не поддерживается этим браузером');
+        throw new Error(t('OfflineAudioContext не поддерживается этим браузером'));
       }
       const audioBuffer = await renderMusicOffline(selectedGenre, musicDuration, useDesc);
-      if (!audioBuffer || audioBuffer.length === 0) throw new Error('Пустой аудиобуфер');
+      if (!audioBuffer || audioBuffer.length === 0) throw new Error(t('Пустой аудиобуфер'));
       const blob = bufferToWav(audioBuffer);
-      if (!blob || blob.size === 0) throw new Error('Ошибка конвертации WAV');
-      const genreName = useDesc ? 'По описанию' : (MUSIC_GENRES.find(g => g.id === selectedGenre)?.name || selectedGenre);
-      const name = useDesc ? `${useDesc.slice(0, 30)} — ${musicDuration}с` : `${genreName} — ${musicDuration}с`;
+      if (!blob || blob.size === 0) throw new Error(t('Ошибка конвертации WAV'));
+      const genreName = useDesc ? t('По описанию') : (MUSIC_GENRES.find(g => g.id === selectedGenre)?.name || selectedGenre);
+      const name = t('{name} — {s}с', { name: useDesc ? useDesc.slice(0, 30) : genreName, s: musicDuration });
       setGeneratedTrack(blob);
       setTrackName(name);
-      setStatus('Трек готов! Можно прослушать и скачать.');
+      setStatus(t('Трек готов! Можно прослушать и скачать.'));
     } catch (err) {
       console.error('Music generation error:', err);
-      setStatus('Ошибка: ' + (err.message || err.toString() || 'неизвестная ошибка'));
+      setStatus(t('Ошибка:') + ' ' + (err.message || err.toString() || t('неизвестная ошибка')));
     } finally {
       setGenerating(false);
       setTimeout(() => setStatus(''), 4000);
@@ -1331,8 +1341,8 @@ function MusicGeneration({ user }) {
     return (
       <div className="text-center py-12">
         <div className="text-4xl mb-4">🔒</div>
-        <p className="text-discord-white font-bold mb-1">Доступно по подписке</p>
-        <p className="text-discord-muted text-sm">Купите Privet или выше для доступа к нейросети</p>
+        <p className="text-discord-white font-bold mb-1">{t('Доступно по подписке')}</p>
+        <p className="text-discord-muted text-sm">{t('Купите Privet или выше для доступа к нейросети')}</p>
       </div>
     );
   }
@@ -1342,29 +1352,29 @@ function MusicGeneration({ user }) {
       <div className="flex items-center gap-3 bg-discord-dark/50 rounded-xl p-3 border border-discord-light/10">
         <Volume2 size={14} className="text-discord-muted" />
         <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(Number(e.target.value))}
-          className="flex-1 h-1.5 rounded-full appearance-none bg-discord-light/20 accent-purple-500" />
+          className="flex-1 h-1.5 rounded-full appearance-none bg-discord-light/20 accent-sky-500" />
         <span className="text-xs text-discord-muted w-10 text-right">{volume}%</span>
       </div>
 
       <div className="flex gap-1 bg-discord-dark border border-discord-light/20 rounded-xl p-1">
         <button onClick={() => setActiveSection('tts')}
           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeSection === 'tts' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
-          🗣️ Озвучка
+          {t('🗣️ Озвучка')}
         </button>
         <button onClick={() => setActiveSection('music')}
-          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeSection === 'music' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
-          🎵 Жанр
+          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeSection === 'music' ? 'bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
+          {t('🎵 Жанр')}
         </button>
         <button onClick={() => setActiveSection('describe')}
           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeSection === 'describe' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
-          ✨ По описанию
+          {t('✨ По описанию')}
         </button>
       </div>
 
       {activeSection === 'tts' && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-discord-muted mb-1.5 block">Голос</label>
+            <label className="text-xs text-discord-muted mb-1.5 block">{t('Голос')}</label>
             <div className="grid grid-cols-3 gap-1.5">
               {VOICE_PRESETS.map(v => (
                 <button key={v.id} onClick={() => setSelectedVoice(v.id)}
@@ -1378,14 +1388,14 @@ function MusicGeneration({ user }) {
             </div>
           </div>
           <div>
-            <label className="text-xs text-discord-muted mb-1.5 block">Текст для озвучки</label>
+            <label className="text-xs text-discord-muted mb-1.5 block">{t('Текст для озвучки')}</label>
             <textarea value={ttsText} onChange={e => setTtsText(e.target.value)} rows={3}
-              placeholder="Привет, как дела? Расскажи мне что-нибудь интересное."
+              placeholder={t('Привет, как дела? Расскажи мне что-нибудь интересное.')}
               className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-green-500/50 resize-none transition-colors" />
           </div>
           <button onClick={handleTTS} disabled={generating || !ttsText.trim()}
             className="w-full py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-            {generating ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Озвучиваю...</> : <><Play size={16} />Озвучить</>}
+            {generating ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('Озвучиваю...')}</> : <><Play size={16} />{t('Озвучить')}</>}
           </button>
         </div>
       )}
@@ -1393,12 +1403,12 @@ function MusicGeneration({ user }) {
       {activeSection === 'music' && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-discord-muted mb-1.5 block">Жанр</label>
+            <label className="text-xs text-discord-muted mb-1.5 block">{t('Жанр')}</label>
             <div className="grid grid-cols-5 gap-1.5">
               {MUSIC_GENRES.map(g => (
                 <button key={g.id} onClick={() => setSelectedGenre(g.id)}
                   className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg border transition-all ${
-                    selectedGenre === g.id ? 'bg-purple-500/20 border-purple-500/40 text-purple-400' : 'bg-discord-dark/50 border-discord-light/10 hover:border-purple-500/30 text-discord-white'
+                    selectedGenre === g.id ? 'bg-sky-500/20 border-sky-500/40 text-sky-400' : 'bg-discord-dark/50 border-discord-light/10 hover:border-sky-500/30 text-discord-white'
                   }`}>
                   <span className="text-lg">{g.icon}</span>
                   <span className="text-[10px] font-medium">{g.name}</span>
@@ -1409,19 +1419,19 @@ function MusicGeneration({ user }) {
           <div>
             <label className="text-xs text-discord-muted mb-1.5 block">
               Длительность: {musicDuration}с
-              {!isPrivetPlus && <span className="text-yellow-400 ml-1">(Privet: макс. 30с)</span>}
+              {!isPrivetPlus && <span className="text-yellow-400 ml-1">{t('(Privet: макс. 30с)')}</span>}
             </label>
             <input type="range" min="5" max={isPrivetPlus ? 180 : 30} step="5"
               value={musicDuration} onChange={e => setMusicDuration(Number(e.target.value))}
-              className="w-full h-1.5 rounded-full appearance-none bg-discord-light/20 accent-purple-500" />
+              className="w-full h-1.5 rounded-full appearance-none bg-discord-light/20 accent-sky-500" />
             <div className="flex justify-between text-[10px] text-discord-muted mt-0.5">
-              <span>5с</span>
-              <span>{isPrivetPlus ? '3 мин' : '30с'}</span>
+              <span>{t('5с')}</span>
+              <span>{isPrivetPlus ? t('3 мин') : t('30с')}</span>
             </div>
           </div>
           <button onClick={() => handleGenerateMusic()} disabled={generating}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-            {generating ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Генерирую...</> : <><Music size={16} />Сгенерировать трек</>}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 text-white font-medium text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+            {generating ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('Генерирую...')}</> : <><Music size={16} />{t('Сгенерировать трек')}</>}
           </button>
         </div>
       )}
@@ -1429,32 +1439,32 @@ function MusicGeneration({ user }) {
       {activeSection === 'describe' && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-discord-muted mb-1.5 block">Опишите музыку которую хотите получить</label>
+            <label className="text-xs text-discord-muted mb-1.5 block">{t('Опишите музыку которую хотите получить')}</label>
             <textarea value={musicDescription} onChange={e => setMusicDescription(e.target.value)} rows={4}
-              placeholder="Тёмный трек в стиле дрилл с агрессивным басом и быстрыми хай-хатами...&#10;Или: весёлый ло-фай для учёбы с джазовыми аккордами...&#10;Или: эпическая оркестровая композиция для битвы"
+              placeholder={t('Тёмный трек в стиле дрилл с агрессивным басом и быстрыми хай-хатами...&#10;Или: весёлый ло-фай для учёбы с джазовыми аккордами...&#10;Или: эпическая оркестровая композиция для битвы')}
               className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-white text-sm focus:outline-none focus:border-amber-500/50 resize-none transition-colors" />
           </div>
           <div>
             <label className="text-xs text-discord-muted mb-1.5 block">
               Длительность: {musicDuration}с
-              {!isPrivetPlus && <span className="text-yellow-400 ml-1">(Privet: макс. 30с)</span>}
+              {!isPrivetPlus && <span className="text-yellow-400 ml-1">{t('(Privet: макс. 30с)')}</span>}
             </label>
             <input type="range" min="5" max={isPrivetPlus ? 180 : 30} step="5"
               value={musicDuration} onChange={e => setMusicDuration(Number(e.target.value))}
               className="w-full h-1.5 rounded-full appearance-none bg-discord-light/20 accent-amber-500" />
             <div className="flex justify-between text-[10px] text-discord-muted mt-0.5">
-              <span>5с</span>
-              <span>{isPrivetPlus ? '3 мин' : '30с'}</span>
+              <span>{t('5с')}</span>
+              <span>{isPrivetPlus ? t('3 мин') : t('30с')}</span>
             </div>
           </div>
           <div className="bg-discord-dark/30 rounded-xl p-2.5 border border-discord-light/10">
             <p className="text-[10px] text-discord-muted">
-              Нейросеть анализирует описание и подбирает BPM, тональность, инструменты и настроение. Примеры: «тёмный дрилл», «летний поп», «космический эмбиент», «эпичный оркестр»
+              {t('Нейросеть анализирует описание и подбирает BPM, тональность, инструменты и настроение. Примеры: «тёмный дрилл», «летний поп», «космический эмбиент», «эпичный оркестр»')}
             </p>
           </div>
           <button onClick={() => handleGenerateMusic(musicDescription)} disabled={generating || !musicDescription.trim()}
             className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-            {generating ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Генерирую...</> : <><Sparkles size={16} />Сгенерировать по описанию</>}
+            {generating ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('Генерирую...')}</> : <><Sparkles size={16} />{t('Сгенерировать по описанию')}</>}
           </button>
         </div>
       )}
@@ -1463,17 +1473,17 @@ function MusicGeneration({ user }) {
         <div className={`px-3 py-2 rounded-xl text-xs text-center font-medium ${
           status.includes('Ошибка') || status.includes('Макс') ? 'bg-red-500/20 text-red-400 border border-red-500/30'
             : status.includes('Готово') || status.includes('готов') ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-              : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+              : 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
         }`}>{status}</div>
       )}
 
       {generatedTrack && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-discord-muted block">Сгенерированный трек</label>
+            <label className="text-xs text-discord-muted block">{t('Сгенерированный трек')}</label>
             <button onClick={() => handleGenerateMusic(activeSection === 'describe' ? musicDescription : '')} disabled={generating}
-              className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1">
-              🔄 Другой вариант
+              className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1">
+              {t('🔄 Другой вариант')}
             </button>
           </div>
           <TrackPlayer blob={generatedTrack} name={trackName} onDownload={handleDownload} />
@@ -1483,14 +1493,14 @@ function MusicGeneration({ user }) {
       {isPrivetPlus && (
         <div className="bg-discord-dark/30 rounded-xl p-3 border border-discord-light/10">
           <p className="text-[10px] text-discord-muted text-center">
-            Privet Plus: генерация музыки до 3 минут, все жанры
+            {t('Privet Plus: генерация музыки до 3 минут, все жанры')}
           </p>
         </div>
       )}
       {!isPrivetPlus && isPrivet && (
         <div className="bg-discord-dark/30 rounded-xl p-3 border border-discord-light/10">
           <p className="text-[10px] text-discord-muted text-center">
-            Privet: музыка до 30 сек. Купите Privet Plus для треков до 3 мин!
+            {t('Privet: музыка до 30 сек. Купите Privet Plus для треков до 3 мин!')}
           </p>
         </div>
       )}
@@ -1503,6 +1513,7 @@ export default function GenerateTab({ user }) {
   const [showChat, setShowChat] = useState(false);
   const [chats, setChats] = useState([]);
   const [chatsLoaded, setChatsLoaded] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     apiGet('/api/ai-chats').then(list => {
@@ -1520,8 +1531,8 @@ export default function GenerateTab({ user }) {
 
   const createChat = async () => {
     try {
-      const res = await apiPost('/api/ai-chats', { title: 'Новый чат' });
-      setChats(prev => [{ id: res.id, title: 'Новый чат', messages: [], created_at: res.created_at }, ...prev]);
+      const res = await apiPost('/api/ai-chats', { title: t('Новый чат') });
+      setChats(prev => [{ id: res.id, title: t('Новый чат'), messages: [], created_at: res.created_at }, ...prev]);
       return res.id;
     } catch (e) { console.error(e); return null; }
   };
@@ -1561,15 +1572,15 @@ export default function GenerateTab({ user }) {
       <div className="flex gap-1 bg-discord-dark border border-discord-light/20 rounded-xl p-1">
         <button onClick={() => setActiveTab('image')}
           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'image' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
-          <ImageIcon size={16} />Изображения
+          <ImageIcon size={16} />{t('Изображения')}
         </button>
         <button onClick={() => setActiveTab('text')}
           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'text' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
-          <MessageSquareText size={16} />Текст
+          <MessageSquareText size={16} />{t('Текст')}
         </button>
         <button onClick={() => setActiveTab('sound')}
           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'sound' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/20'}`}>
-          <Music size={16} />Звук
+          <Music size={16} />{t('Звук')}
         </button>
       </div>
       {activeTab === 'image' && <ImageGeneration />}

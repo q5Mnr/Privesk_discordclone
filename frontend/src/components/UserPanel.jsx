@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Settings, Mic, MicOff, Headphones, Plus, Check, ChevronDown, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function UserPanel({ user, onLogout, onSettings }) {
   const [muted, setMuted] = useState(false);
@@ -8,6 +9,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
   const [showAccounts, setShowAccounts] = useState(false);
   const panelRef = useRef(null);
   const { accounts, switchAccount, addAccount } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!showAccounts) return;
@@ -51,7 +53,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
             className={`p-2 rounded-xl hover:bg-discord-light/40 transition-all duration-200 ${
               muted ? 'text-discord-red' : 'text-discord-gray hover:text-discord-text'
             }`}
-            title={muted ? 'Включить микрофон' : 'Выключить микрофон'}
+            title={muted ? t('Включить микрофон') : t('Выключить микрофон')}
           >
             {muted ? <MicOff size={18} /> : <Mic size={18} />}
           </button>
@@ -61,7 +63,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
             className={`p-2 rounded-xl hover:bg-discord-light/40 transition-all duration-200 ${
               deafened ? 'text-discord-red' : 'text-discord-gray hover:text-discord-text'
             }`}
-            title={deafened ? 'Включить звук' : 'Выключить звук'}
+            title={deafened ? t('Включить звук') : t('Выключить звук')}
           >
             {deafened ? <Headphones size={18} className="text-discord-red" /> : <Headphones size={18} />}
           </button>
@@ -69,7 +71,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
           <button
             onClick={onSettings}
             className="p-2 rounded-xl hover:bg-discord-light/40 text-discord-gray hover:text-discord-text transition-all duration-200"
-            title="Настройки"
+            title={t('Настройки')}
           >
             <Settings size={18} />
           </button>
@@ -78,7 +80,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
             <button
               onClick={() => setShowAccounts(!showAccounts)}
               className={`p-2 rounded-xl hover:bg-discord-light/40 transition-all duration-200 ${showAccounts ? 'text-discord-accent bg-discord-accent/10' : 'text-discord-gray hover:text-discord-text'}`}
-              title="Аккаунты"
+              title={t('Аккаунты')}
             >
               <ArrowLeftRight size={18} />
             </button>
@@ -86,7 +88,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
             {showAccounts && (
               <div className="absolute top-full right-0 mt-2 w-72 bg-discord-darker rounded-2xl shadow-2xl border border-discord-light/20 overflow-hidden z-50">
                 <div className="p-3 border-b border-discord-light/20">
-                  <p className="text-[11px] font-bold text-discord-accent uppercase tracking-wider">Переключить аккаунт</p>
+                  <p className="text-[11px] font-bold text-discord-accent uppercase tracking-wider">{t('Переключить аккаунт')}</p>
                 </div>
 
                 <div className="p-2 max-h-60 overflow-y-auto">
@@ -133,7 +135,7 @@ export default function UserPanel({ user, onLogout, onSettings }) {
                     <div className="w-9 h-9 rounded-full bg-discord-mid flex items-center justify-center text-discord-gray flex-shrink-0 border border-discord-light/30">
                       <Plus size={18} />
                     </div>
-                    <span className="text-sm text-discord-gray">Добавить аккаунт</span>
+                    <span className="text-sm text-discord-gray">{t('Добавить аккаунт')}</span>
                   </div>
                 </div>
               </div>

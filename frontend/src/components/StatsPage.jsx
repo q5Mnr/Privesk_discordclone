@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trophy, MessageCircle, Users, Coins, Gamepad2, Medal, Crown, Flame, TrendingUp, Award } from 'lucide-react';
 import { apiGet } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-orange-400'];
 const MEDAL_ICONS = ['🥇', '🥈', '🥉'];
-const RARITY_COLORS = { secret: '#a855f7', legendary: '#ef4444', epic: '#8b5cf6', rare: '#3b82f6', common: '#6b7280', admin: '#f59e0b' };
+const RARITY_COLORS = { secret: '#22d3ee', legendary: '#ef4444', epic: '#0ea5e9', rare: '#3b82f6', common: '#6b7280', admin: '#f59e0b' };
 const RARITY_LABELS = { secret: 'Секретный', legendary: 'Легендарный', epic: 'Эпический', rare: 'Редкий', common: 'Обычный', admin: 'Админ' };
 
 export default function StatsPage({ onClose, onOpenProfile }) {
@@ -13,6 +14,7 @@ export default function StatsPage({ onClose, onOpenProfile }) {
   const [tab, setTab] = useState('stats');
   const [lbTab, setLbTab] = useState('coins');
   const [loading, setLoading] = useState(true);
+  const { t } = useI18n();
 
   useEffect(() => {
     (async () => {
@@ -25,16 +27,19 @@ export default function StatsPage({ onClose, onOpenProfile }) {
     })();
   }, []);
 
-  const StatCard = ({ icon: Icon, label, value, color = 'text-discord-white', sub }) => (
+  const StatCard = ({ icon: Icon, label, value, color = 'text-discord-white', sub }) => {
+    const { t } = useI18n();
+    return (
     <div className="bg-discord-darker/50 rounded-xl p-4 border border-discord-light/10 hover:border-discord-accent/30 transition-all">
       <div className="flex items-center gap-2 mb-2">
         <Icon size={16} className={color} />
-        <span className="text-xs text-discord-muted font-medium">{label}</span>
+        <span className="text-xs text-discord-muted font-medium">{t(label)}</span>
       </div>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="text-[10px] text-discord-muted mt-1">{sub}</p>}
+      {sub && <p className="text-[10px] text-discord-muted mt-1">{t(sub)}</p>}
     </div>
-  );
+    );
+  };
 
   const LbUser = ({ item, rank, field, format }) => (
     <div className={`flex items-center gap-3 px-3 py-2 rounded-lg ${rank <= 3 ? 'bg-discord-accent/5 border border-discord-accent/10' : 'hover:bg-discord-light/10'} transition-all cursor-pointer`}
@@ -52,7 +57,7 @@ export default function StatsPage({ onClose, onOpenProfile }) {
 
   if (loading) return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="text-discord-white animate-pulse text-lg">Загрузка...</div>
+      <div className="text-discord-white animate-pulse text-lg">{t('Загрузка...')}</div>
     </div>
   );
 
@@ -60,10 +65,10 @@ export default function StatsPage({ onClose, onOpenProfile }) {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-discord-mid rounded-2xl w-full max-w-2xl max-h-[85vh] shadow-2xl border border-discord-light/20 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-pink-500/20 px-6 py-4 flex items-center justify-between border-b border-discord-light/20 flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-600/20 via-sky-500/20 to-cyan-500/20 px-6 py-4 flex items-center justify-between border-b border-discord-light/20 flex-shrink-0">
           <div className="flex items-center gap-3">
             <TrendingUp size={24} className="text-blue-400" />
-            <h2 className="text-lg font-bold text-discord-white">Статистика и Рейтинги</h2>
+            <h2 className="text-lg font-bold text-discord-white">{t('Статистика и Рейтинги')}</h2>
           </div>
           <button onClick={onClose} className="text-discord-gray hover:text-discord-accent transition-colors"><X size={24} /></button>
         </div>
@@ -73,7 +78,7 @@ export default function StatsPage({ onClose, onOpenProfile }) {
           {[['stats', 'Моя статистика', TrendingUp], ['leaderboard', 'Рейтинги', Trophy]].map(([id, label, Icon]) => (
             <button key={id} onClick={() => setTab(id)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${tab === id ? 'text-discord-white border-b-2 border-discord-accent bg-discord-accent/5' : 'text-discord-muted hover:text-discord-gray'}`}>
-              <Icon size={16} /> {label}
+              <Icon size={16} /> {t(label)}
             </button>
           ))}
         </div>
@@ -89,10 +94,10 @@ export default function StatsPage({ onClose, onOpenProfile }) {
                 </div>
                 <div>
                   <p className="text-xl font-bold text-discord-white">{stats.user?.username}</p>
-                  <p className="text-sm text-discord-muted">{stats.user?.role_name} • Аккаунт: {stats.stats?.account_age_days} дн.</p>
+                  <p className="text-sm text-discord-muted">{stats.user?.role_name} • {t('Аккаунт:')} {stats.stats?.account_age_days} {t('дн.')}</p>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 font-bold">
-                      ⚡ Ур. {stats.user?.level || 1}
+                      ⚡ {t('Ур.')} {stats.user?.level || 1}
                     </span>
                     <span className="text-[10px] text-discord-muted">{stats.user?.xp || 0} XP</span>
                   </div>
@@ -104,8 +109,8 @@ export default function StatsPage({ onClose, onOpenProfile }) {
                 <StatCard icon={MessageCircle} label="Сообщений" value={stats.stats?.messages} color="text-blue-400" />
                 <StatCard icon={Users} label="Друзей" value={stats.stats?.friends} color="text-green-400" />
                 <StatCard icon={Coins} label="Монет" value={stats.user?.coins || 0} color="text-yellow-400" />
-                <StatCard icon={Trophy} label="Достижений" value={`${stats.stats?.achievements}`} color="text-purple-400" />
-                <StatCard icon={Award} label="Эмодзи" value={`${stats.stats?.emojis}`} color="text-pink-400" />
+                <StatCard icon={Trophy} label="Достижений" value={`${stats.stats?.achievements}`} color="text-sky-400" />
+                <StatCard icon={Award} label="Эмодзи" value={`${stats.stats?.emojis}`} color="text-cyan-400" />
                 <StatCard icon={Gamepad2} label="Побед в казино" value={stats.stats?.casino_wins} color="text-orange-400" sub={`Серия: ${stats.stats?.casino_streak}`} />
                 <StatCard icon={Flame} label="Бонусов получено" value={stats.stats?.daily_claimed} color="text-red-400" />
                 <StatCard icon={Crown} label="Серверов" value={stats.stats?.servers} color="text-discord-accent" />
@@ -113,8 +118,8 @@ export default function StatsPage({ onClose, onOpenProfile }) {
 
               {/* Rarest emoji */}
               {stats.stats?.equipped_emoji && (
-                <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-4 border border-purple-500/20">
-                  <p className="text-xs text-discord-muted mb-2">Экипированный эмодзи</p>
+                <div className="bg-gradient-to-r from-sky-500/10 to-cyan-500/10 rounded-xl p-4 border border-sky-500/20">
+                  <p className="text-xs text-discord-muted mb-2">{t('Экипированный эмодзи')}</p>
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{stats.stats.equipped_emoji.emoji_id}</span>
                     <div>
@@ -133,7 +138,7 @@ export default function StatsPage({ onClose, onOpenProfile }) {
                 {[['coins', 'Монеты', Coins], ['messages', 'Сообщения', MessageCircle], ['casino', 'Казино', Gamepad2], ['achievements', 'Ачивки', Trophy], ['level', 'Уровни', TrendingUp]].map(([id, label, Icon]) => (
                   <button key={id} onClick={() => setLbTab(id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${lbTab === id ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30' : 'text-discord-muted hover:text-discord-gray hover:bg-discord-light/10'}`}>
-                    <Icon size={12} /> {label}
+                    <Icon size={12} /> {t(label)}
                   </button>
                 ))}
               </div>
@@ -147,7 +152,7 @@ export default function StatsPage({ onClose, onOpenProfile }) {
               </div>
 
               {((lbTab === 'coins' && !leaderboard.byCoins?.length) || (lbTab === 'messages' && !leaderboard.byMessages?.length) || (lbTab === 'casino' && !leaderboard.byCasino?.length) || (lbTab === 'achievements' && !leaderboard.byAchievements?.length)) && (
-                <div className="text-center py-8 text-discord-muted text-sm">Пока нет данных</div>
+                <div className="text-center py-8 text-discord-muted text-sm">{t('Пока нет данных')}</div>
               )}
             </div>
           )}

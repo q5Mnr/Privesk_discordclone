@@ -1,9 +1,11 @@
 import React from 'react';
 import { Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import { useI18n } from '../i18n/I18nContext';
 
 function CodeBlock({ language, code }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useI18n();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -21,7 +23,7 @@ function CodeBlock({ language, code }) {
           onClick={handleCopy}
           className="flex items-center gap-1 text-xs text-discord-muted hover:text-discord-white transition-colors"
         >
-          {copied ? <><Check size={12} /> Скопировано</> : <><Copy size={12} /> Копировать</>}
+          {copied ? <><Check size={12} /> {t('Скопировано')}</> : <><Copy size={12} /> {t('Копировать')}</>}
         </button>
       </div>
       <pre className="p-3 bg-[#11111b] overflow-x-auto text-sm">

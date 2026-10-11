@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Hash, Send, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 function ThreadMessage({ message, user }) {
   const isOwn = message.user_id === user?.id;
@@ -32,6 +33,7 @@ export default function ThreadView({ thread, onClose, user, socket }) {
   const [newMessage, setNewMessage] = useState('');
   const [threadInfo, setThreadInfo] = useState(thread);
   const messagesEndRef = useRef(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     loadMessages();
@@ -90,7 +92,7 @@ export default function ThreadView({ thread, onClose, user, socket }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Удалить ветку и все сообщения?')) return;
+    if (!confirm(t('Удалить ветку и все сообщения?'))) return;
     try {
       await fetch(`/api/threads/${thread.id}`, {
         method: 'DELETE',
@@ -105,11 +107,11 @@ export default function ThreadView({ thread, onClose, user, socket }) {
       <div className="h-16 px-4 flex items-center border-b border-discord-light/20 shadow-sm flex-shrink-0 gap-2 bg-discord-mid/80 backdrop-blur-xl">
         <Hash size={18} className="text-discord-accent" />
         <h3 className="text-discord-white font-semibold text-sm truncate flex-1">{threadInfo.name}</h3>
-        <span className="text-xs text-discord-muted">{threadInfo.message_count || 0} сообщений</span>
-        <button onClick={handleArchive} className="p-1.5 rounded-xl text-discord-muted hover:text-discord-white hover:bg-discord-light/30 transition-all" title={threadInfo.archived ? 'Разархивировать' : 'Архивировать'}>
+        <span className="text-xs text-discord-muted">{threadInfo.message_count || 0} {t('сообщений')}</span>
+        <button onClick={handleArchive} className="p-1.5 rounded-xl text-discord-muted hover:text-discord-white hover:bg-discord-light/30 transition-all" title={threadInfo.archived ? t('Разархивировать') : t('Архивировать')}>
           {threadInfo.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
         </button>
-        <button onClick={handleDelete} className="p-1.5 rounded-xl text-discord-muted hover:text-discord-red hover:bg-discord-red/10 transition-all" title="Удалить">
+        <button onClick={handleDelete} className="p-1.5 rounded-xl text-discord-muted hover:text-discord-red hover:bg-discord-red/10 transition-all" title={t('Удалить')}>
           <Trash2 size={16} />
         </button>
         <button onClick={onClose} className="p-1.5 rounded-xl text-discord-muted hover:text-discord-white hover:bg-discord-light/30 transition-all">
@@ -131,7 +133,7 @@ export default function ThreadView({ thread, onClose, user, socket }) {
         <div className="flex-1 flex items-center justify-center text-discord-muted text-sm">
           <div className="text-center">
             <Archive size={32} className="mx-auto mb-2 text-discord-muted" />
-            <p>Ветка архивирована</p>
+            <p>{t('Ветка архивирована')}</p>
           </div>
         </div>
       ) : (
@@ -140,7 +142,7 @@ export default function ThreadView({ thread, onClose, user, socket }) {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
                 <Hash size={36} className="text-discord-muted mb-2" />
-                <p className="text-discord-muted text-sm">Начало ветки «{threadInfo.name}»</p>
+                <p className="text-discord-muted text-sm">{t('Начало ветки')} «{threadInfo.name}»</p>
               </div>
             )}
             {messages.map((msg, i) => (
@@ -155,7 +157,7 @@ export default function ThreadView({ thread, onClose, user, socket }) {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Написать в ветку..."
+                placeholder={t('Написать в ветку...')}
                 className="flex-1 bg-transparent px-4 py-3 text-discord-text text-sm placeholder-discord-muted focus:outline-none"
               />
               <button type="submit" disabled={!newMessage.trim()} className="px-3 py-3 text-discord-accent hover:text-white disabled:text-discord-muted transition-colors">

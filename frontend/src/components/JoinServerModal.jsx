@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function JoinServerModal({ onClose, onJoin }) {
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useI18n();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,7 +16,7 @@ export default function JoinServerModal({ onClose, onJoin }) {
     try {
       await onJoin(inviteCode);
     } catch (err) {
-      setError(err.message || 'Неверный код приглашения');
+      setError(err.message || t('Неверный код приглашения'));
     }
     setLoading(false);
   };
@@ -30,9 +32,9 @@ export default function JoinServerModal({ onClose, onJoin }) {
         </button>
 
         <div className="p-6 text-center">
-          <h2 className="text-2xl font-bold text-discord-white mb-2">Присоединиться к серверу</h2>
+          <h2 className="text-2xl font-bold text-discord-white mb-2">{t('Присоединиться к серверу')}</h2>
           <p className="text-discord-gray text-sm">
-            Введите код приглашения, чтобы присоединиться
+            {t('Введите код приглашения, чтобы присоединиться')}
           </p>
         </div>
 
@@ -45,14 +47,14 @@ export default function JoinServerModal({ onClose, onJoin }) {
         <form onSubmit={handleSubmit} className="px-6 pb-6">
           <div className="mb-6">
             <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">
-              Код приглашения
+              {t('Код приглашения')}
             </label>
             <input
               type="text"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
               className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors placeholder-discord-muted"
-              placeholder="Введите код"
+              placeholder={t('Введите код')}
               autoFocus
             />
           </div>
@@ -63,14 +65,14 @@ export default function JoinServerModal({ onClose, onJoin }) {
               onClick={onClose}
               className="px-4 py-2 text-sm text-discord-gray hover:text-discord-white transition-colors"
             >
-              Отмена
+              {t('Отмена')}
             </button>
             <button
               type="submit"
               disabled={loading || !inviteCode.trim()}
               className="px-6 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white text-sm font-medium rounded-xl transition-all duration-200 disabled:opacity-50"
             >
-              {loading ? 'Поиск...' : 'Присоединиться'}
+              {loading ? t('Поиск...') : t('Присоединиться')}
             </button>
           </div>
         </form>

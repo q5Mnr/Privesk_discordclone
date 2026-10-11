@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Crown, Star, Zap } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const PLANS = [
   {
@@ -25,7 +26,7 @@ const PLANS = [
     price: '999 ₽',
     period: '/ мес',
     icon: '💎',
-    color: 'from-discord-blurple to-purple-600',
+    color: 'from-discord-blurple to-sky-600',
     borderColor: 'border-discord-blurple/30',
     features: [
       'Нормальные настройки',
@@ -62,23 +63,24 @@ export default function SubscriptionModal({ onClose, currentPlan }) {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { t } = useI18n();
 
   const handleActivate = async (plan) => {
     setLoading(true);
     setMessage('');
     try {
       if (plan === 'free') {
-        setMessage('Вы уже на бесплатном тарифе');
+        setMessage(t('Вы уже на бесплатном тарифе'));
         setLoading(false);
         return;
       }
       const res = await apiPost('/api/auth/activate-subscription', { plan, days: 30 });
       if (res.success) {
-        setMessage(`✨ Подписка ${plan === 'privet' ? 'Privet' : 'PRIVET PLUS'} активирована на 30 дней!`);
+        setMessage(t('✨ Подписка {plan} активирована на 30 дней!', { plan: plan === 'privet' ? 'Privet' : 'PRIVET PLUS' }));
         setTimeout(() => onClose(), 2000);
       }
     } catch (err) {
-      setMessage('Ошибка активации');
+      setMessage(t('Ошибка активации'));
     }
     setLoading(false);
   };
@@ -87,10 +89,10 @@ export default function SubscriptionModal({ onClose, currentPlan }) {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-discord-mid rounded-2xl w-full max-w-4xl shadow-2xl border border-discord-light/20 overflow-hidden max-h-[85vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-discord-blurple via-purple-500 to-discord-yellow px-8 py-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-discord-blurple via-sky-500 to-discord-yellow px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Crown size={28} className="text-white" />
-            <h2 className="text-2xl font-bold text-white">Наши товары</h2>
+            <h2 className="text-2xl font-bold text-white">{t('Наши товары')}</h2>
           </div>
           <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
             <X size={28} />
@@ -119,23 +121,23 @@ export default function SubscriptionModal({ onClose, currentPlan }) {
               >
                 {plan.badge && (
                   <div className="absolute -top-3 right-4 bg-discord-red text-white text-[11px] font-bold px-3 py-1 rounded-full">
-                    {plan.badge}
+                    {t(plan.badge)}
                   </div>
                 )}
                 {isCurrent && (
                   <div className="absolute -top-3 left-4 bg-discord-accent text-discord-darker text-[11px] font-bold px-3 py-1 rounded-full">
-                    ТЕКУЩИЙ
+                    {t('ТЕКУЩИЙ')}
                   </div>
                 )}
 
                 <div className="text-center mb-6">
                   <div className="text-4xl mb-3">{plan.icon}</div>
                   <h3 className={`text-xl font-bold mb-1 ${plan.id === 'privet_plus' ? 'text-discord-yellow' : 'text-discord-white'}`}>
-                    {plan.name}
+                    {t(plan.name)}
                   </h3>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-2xl font-bold text-discord-white">{plan.price}</span>
-                    {plan.period && <span className="text-sm text-discord-muted">{plan.period}</span>}
+                    <span className="text-2xl font-bold text-discord-white">{t(plan.price)}</span>
+                    {plan.period && <span className="text-sm text-discord-muted">{t(plan.period)}</span>}
                   </div>
                 </div>
 
@@ -143,7 +145,7 @@ export default function SubscriptionModal({ onClose, currentPlan }) {
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-discord-text">
                       <Check size={16} className="text-discord-accent mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
+                      <span>{t(feature)}</span>
                     </li>
                   ))}
                 </ul>
@@ -157,7 +159,7 @@ export default function SubscriptionModal({ onClose, currentPlan }) {
                       : `bg-gradient-to-r ${plan.color} hover:shadow-lg text-white`
                   }`}
                 >
-                  {isCurrent ? 'Текущий' : plan.id === 'free' ? 'Бесплатно' : 'Активировать'}
+                  {isCurrent ? t('Текущий') : plan.id === 'free' ? t('Бесплатно') : t('Активировать')}
                 </button>
               </div>
             );
@@ -165,7 +167,7 @@ export default function SubscriptionModal({ onClose, currentPlan }) {
         </div>
 
         <div className="px-8 pb-4 text-center">
-          <p className="text-[11px] text-discord-muted">* Подписки на год нет</p>
+          <p className="text-[11px] text-discord-muted">{t('* Подписки на год нет')}</p>
         </div>
       </div>
     </div>

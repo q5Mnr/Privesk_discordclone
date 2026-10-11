@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, Palette, Frame, Shirt, Coins, Check, Package, ArrowLeft } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const TYPE_TABS = [
   { id: 'all', label: 'Все', icon: ShoppingCart },
@@ -10,6 +11,7 @@ const TYPE_TABS = [
 ];
 
 function ItemCard({ item, coins, onBuy, onEquip, buyingId }) {
+  const { t } = useI18n();
   const [justBought, setJustBought] = useState(false);
 
   async function handleBuy() {
@@ -26,7 +28,7 @@ function ItemCard({ item, coins, onBuy, onEquip, buyingId }) {
     }`}>
       <div className="flex items-start justify-between mb-3">
         <span className="text-3xl">{item.emoji}</span>
-        {isEquipped && <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/20 px-2 py-0.5 rounded-full">ОДЕТО</span>}
+        {isEquipped && <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/20 px-2 py-0.5 rounded-full">{t('ОДЕТО')}</span>}
         {item.type === 'border' && (
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-discord-blurple to-discord-accent" style={{ border: `3px solid ${item.value}`, boxShadow: `0 0 8px ${item.value}40` }} />
         )}
@@ -46,14 +48,14 @@ function ItemCard({ item, coins, onBuy, onEquip, buyingId }) {
               ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 hover:bg-yellow-400/30'
               : 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
           }`}>
-          {isEquipped ? <><Check size={14} /> Одето</> : <><Check size={14} /> Экипировать</>}
+          {isEquipped ? <><Check size={14} /> {t('Одето')}</> : <><Check size={14} /> {t('Экипировать')}</>}
         </button>
       ) : (
         <button onClick={handleBuy} disabled={buyingId === item.id || coins < item.price}
           className={`w-full py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all ${
             coins < item.price ? 'bg-discord-light/10 text-discord-muted cursor-not-allowed' : 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30 hover:bg-discord-accent/30'
           }`}>
-          {buyingId === item.id ? 'Покупка...' : <><Coins size={14} /> {item.price}</>}
+          {buyingId === item.id ? t('Покупка...') : <><Coins size={14} /> {item.price}</>}
         </button>
       )}
     </div>
@@ -61,6 +63,7 @@ function ItemCard({ item, coins, onBuy, onEquip, buyingId }) {
 }
 
 export default function ShopPage({ user, onClose, updateUser }) {
+  const { t } = useI18n();
   const [items, setItems] = useState([]);
   const [coins, setCoins] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
@@ -95,7 +98,7 @@ export default function ShopPage({ user, onClose, updateUser }) {
         setItems(prev => prev.map(i => i.id === itemId ? { ...i, owned: true } : i));
         await refreshUser();
       }
-    } catch (e) { alert(e.message || 'Ошибка покупки'); }
+    } catch (e) { alert(e.message || t('Ошибка покупки')); }
     setBuyingId(null);
   }
 
@@ -111,7 +114,7 @@ export default function ShopPage({ user, onClose, updateUser }) {
         }));
         await refreshUser();
       }
-    } catch (e) { alert(e.message || 'Ошибка'); }
+    } catch (e) { alert(e.message || t('Ошибка')); }
   }
 
   const filtered = activeTab === 'all' ? items : items.filter(i => i.type === activeTab);
@@ -129,19 +132,19 @@ export default function ShopPage({ user, onClose, updateUser }) {
               {page === 'shop' ? <ShoppingCart size={20} className="text-white" /> : <Package size={20} className="text-white" />}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-discord-white">{page === 'shop' ? 'Магазин' : 'Инвентарь'}</h2>
-              <p className="text-xs text-discord-muted">{page === 'shop' ? 'Покупай кастомизации за монеты' : `${ownedItems.length} предметов`}</p>
+              <h2 className="text-lg font-bold text-discord-white">{page === 'shop' ? t('Магазин') : t('Инвентарь')}</h2>
+              <p className="text-xs text-discord-muted">{page === 'shop' ? t('Покупай кастомизации за монеты') : t('{count} предметов', { count: ownedItems.length })}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex bg-discord-dark rounded-xl border border-discord-light/20 overflow-hidden">
               <button onClick={() => setPage('shop')}
                 className={`px-4 py-2 text-sm font-medium transition-all ${page === 'shop' ? 'bg-emerald-500/20 text-emerald-400' : 'text-discord-gray hover:text-discord-white'}`}>
-                <ShoppingCart size={14} className="inline mr-1.5" />Магазин
+                <ShoppingCart size={14} className="inline mr-1.5" />{t('Магазин')}
               </button>
               <button onClick={() => setPage('inventory')}
                 className={`px-4 py-2 text-sm font-medium transition-all ${page === 'inventory' ? 'bg-yellow-500/20 text-yellow-400' : 'text-discord-gray hover:text-discord-white'}`}>
-                <Package size={14} className="inline mr-1.5" />Инвентарь
+                <Package size={14} className="inline mr-1.5" />{t('Инвентарь')}
               </button>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 ml-2">
@@ -161,7 +164,7 @@ export default function ShopPage({ user, onClose, updateUser }) {
                 activeTab === tab.id ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30' : 'text-discord-gray hover:text-discord-white hover:bg-discord-light/20'
               }`}>
               <tab.icon size={16} />
-              {tab.label}
+              {t(tab.label)}
               {tab.id === 'all' && page === 'inventory' && <span className="text-xs opacity-60">({ownedItems.length})</span>}
             </button>
           ))}
@@ -169,10 +172,10 @@ export default function ShopPage({ user, onClose, updateUser }) {
 
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
-            <div className="text-center py-10 text-discord-muted">Загрузка...</div>
+            <div className="text-center py-10 text-discord-muted">{t('Загрузка...')}</div>
           ) : page === 'shop' ? (
             filtered.length === 0 ? (
-              <div className="text-center py-10 text-discord-muted">Нет предметов</div>
+              <div className="text-center py-10 text-discord-muted">{t('Нет предметов')}</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map(item => (
@@ -184,10 +187,10 @@ export default function ShopPage({ user, onClose, updateUser }) {
             ownedFiltered.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">🎒</div>
-                <h3 className="text-lg font-bold text-discord-white mb-2">Инвентарь пуст</h3>
-                <p className="text-sm text-discord-muted mb-4">Купи что-нибудь в магазине!</p>
+                <h3 className="text-lg font-bold text-discord-white mb-2">{t('Инвентарь пуст')}</h3>
+                <p className="text-sm text-discord-muted mb-4">{t('Купи что-нибудь в магазине!')}</p>
                 <button onClick={() => setPage('shop')} className="px-6 py-2 bg-discord-accent/20 text-discord-accent rounded-xl border border-discord-accent/30 hover:bg-discord-accent/30 transition-all text-sm font-medium">
-                  В магазин
+                  {t('В магазин')}
                 </button>
               </div>
             ) : (

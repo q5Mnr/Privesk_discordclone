@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Hash, Volume2, Plus, Trash2, Edit3, Shield, Ban, UserMinus, ChevronDown, Users, Settings, AlertTriangle, MessageSquare } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 const tabs = [
   { id: 'overview', label: 'Обзор', icon: Settings },
@@ -11,6 +12,7 @@ const tabs = [
 ];
 
 export default function ServerSettings({ server, channels, members, onClose, onUpdate, user }) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('overview');
   const [serverName, setServerName] = useState(server?.name || '');
   const [description, setDescription] = useState(server?.description || '');
@@ -76,7 +78,7 @@ export default function ServerSettings({ server, channels, members, onClose, onU
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setError(data.error || 'Ошибка');
+        setError(data.error || t('Ошибка'));
       }
     } catch (err) {
       setError(err.message);
@@ -106,7 +108,7 @@ export default function ServerSettings({ server, channels, members, onClose, onU
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setError(data.error || 'Ошибка');
+        setError(data.error || t('Ошибка'));
       }
     } catch (err) { setError(err.message); }
     setSaving(false);
@@ -131,7 +133,7 @@ export default function ServerSettings({ server, channels, members, onClose, onU
                 }`}
               >
                 <Icon size={16} />
-                {tab.label}
+                {t(tab.label)}
               </button>
             );
           })}
@@ -167,14 +169,14 @@ export default function ServerSettings({ server, channels, members, onClose, onU
               saving={saving}
               saved={saved}
               onDelete={async () => {
-                if (confirm('Вы уверены что хотите удалить сервер?')) {
+                if (confirm(t('Вы уверены что хотите удалить сервер?'))) {
                   await apiFetch(`/api/servers/${server.id}`, { method: 'DELETE' });
                   onUpdate(null);
                   onClose();
                 }
               }}
               onLeave={async () => {
-                if (confirm('Вы уверены что хотите покинуть сервер?')) {
+                if (confirm(t('Вы уверены что хотите покинуть сервер?'))) {
                   const myMember = members.find(m => m.id === user.id || m.user_id === user.id);
                   if (myMember) {
                     await apiFetch(`/api/servers/${server.id}/members/${myMember.member_id}`, { method: 'DELETE' });
@@ -256,12 +258,13 @@ export default function ServerSettings({ server, channels, members, onClose, onU
 }
 
 function OverviewTab({ server, serverName, setServerName, description, setDescription, defaultNotifications, setDefaultNotifications, afkTimeout, setAfkTimeout, verificationLevel, setVerificationLevel, channels, onSave, saving, saved, onDelete, onLeave, isOwner, isPublic, setIsPublic }) {
+  const { t } = useI18n();
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Настройки сервера</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Настройки сервера')}</h2>
 
       <div className="mb-4">
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Название сервера</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Название сервера')}</label>
         <input
           type="text"
           value={serverName}
@@ -271,62 +274,62 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
       </div>
 
       <div className="mb-4">
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Описание</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Описание')}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="О чём этот сервер?"
+          placeholder={t('О чём этот сервер?')}
           rows={3}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 resize-none transition-colors"
         />
       </div>
 
       <div className="mb-4">
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Уведомления по умолчанию</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Уведомления по умолчанию')}</label>
         <select
           value={defaultNotifications}
           onChange={(e) => setDefaultNotifications(e.target.value)}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors"
         >
-          <option value="all">Все сообщения</option>
-          <option value="mentions">Только @упоминания</option>
+          <option value="all">{t('Все сообщения')}</option>
+          <option value="mentions">{t('Только @упоминания')}</option>
         </select>
-        <p className="text-xs text-discord-muted mt-1">Определяет, будут ли участники получать уведомления по умолчанию</p>
+        <p className="text-xs text-discord-muted mt-1">{t('Определяет, будут ли участники получать уведомления по умолчанию')}</p>
       </div>
 
       <div className="mb-4">
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">AFK Тайм-аут (сек)</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('AFK Тайм-аут (сек)')}</label>
         <select
           value={afkTimeout}
           onChange={(e) => setAfkTimeout(Number(e.target.value))}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors"
         >
-          <option value={60}>1 минута</option>
-          <option value={300}>5 минут</option>
-          <option value={900}>15 минут</option>
-          <option value={1800}>30 минут</option>
-          <option value={3600}>1 час</option>
+          <option value={60}>{t('1 минута')}</option>
+          <option value={300}>{t('5 минут')}</option>
+          <option value={900}>{t('15 минут')}</option>
+          <option value={1800}>{t('30 минут')}</option>
+          <option value={3600}>{t('1 час')}</option>
         </select>
-        <p className="text-xs text-discord-muted mt-1">Время без активности перед перемещением в AFK-канал</p>
+        <p className="text-xs text-discord-muted mt-1">{t('Время без активности перед перемещением в AFK-канал')}</p>
       </div>
 
       <div className="mb-4">
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Уровень верификации</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Уровень верификации')}</label>
         <select
           value={verificationLevel}
           onChange={(e) => setVerificationLevel(Number(e.target.value))}
           className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors"
         >
-          <option value={0}>Нет</option>
-          <option value={1}>Низкий (email)</option>
-          <option value={2}>Средний (5 мин на сервере)</option>
-          <option value={3}>Высокий (10 мин)</option>
+          <option value={0}>{t('Нет')}</option>
+          <option value={1}>{t('Низкий (email)')}</option>
+          <option value={2}>{t('Средний (5 мин на сервере)')}</option>
+          <option value={3}>{t('Высокий (10 мин)')}</option>
         </select>
-        <p className="text-xs text-discord-muted mt-1">Требовать верификацию для участия в чате</p>
+        <p className="text-xs text-discord-muted mt-1">{t('Требовать верификацию для участия в чате')}</p>
       </div>
 
       <div className="mb-6">
-        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Инвайт-код</label>
+        <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Инвайт-код')}</label>
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -338,14 +341,14 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
             onClick={() => { navigator.clipboard.writeText(server?.invite_code || ''); }}
             className="px-4 py-2.5 bg-discord-light/30 hover:bg-discord-light/50 text-discord-text text-sm rounded-xl transition-colors"
           >
-            Копировать
+            {t('Копировать')}
           </button>
         </div>
       </div>
 
       {isOwner && (
         <div className="mb-6">
-          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">Видимость сервера</label>
+          <label className="block text-[11px] font-bold text-discord-accent uppercase mb-2 tracking-wider">{t('Видимость сервера')}</label>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsPublic(0)}
@@ -353,7 +356,7 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
                 !isPublic ? 'border-discord-accent bg-discord-accent/10 text-discord-accent' : 'border-discord-light/20 bg-discord-dark text-discord-muted hover:border-discord-light/40'
               }`}
             >
-              🔒 Приватный
+              {t('🔒 Приватный')}
             </button>
             <button
               onClick={() => setIsPublic(1)}
@@ -361,10 +364,10 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
                 isPublic ? 'border-discord-accent bg-discord-accent/10 text-discord-accent' : 'border-discord-light/20 bg-discord-dark text-discord-muted hover:border-discord-light/40'
               }`}
             >
-              🌐 Публичный
+              {t('🌐 Публичный')}
             </button>
           </div>
-          <p className="text-xs text-discord-muted mt-1.5">{isPublic ? 'Сервер виден в Explore и доступен всем' : 'Сервер скрыт, вступить можно только по инвайт-ссылке'}</p>
+          <p className="text-xs text-discord-muted mt-1.5">{isPublic ? t('Сервер виден в Explore и доступен всем') : t('Сервер скрыт, вступить можно только по инвайт-ссылке')}</p>
         </div>
       )}
 
@@ -375,7 +378,7 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
               onClick={onLeave}
               className="px-4 py-2 bg-discord-red hover:opacity-90 text-white text-sm font-medium rounded-xl transition-all"
             >
-              Покинуть сервер
+              {t('Покинуть сервер')}
             </button>
           )}
           {isOwner && (
@@ -383,7 +386,7 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
               onClick={onDelete}
               className="px-4 py-2 bg-discord-red hover:opacity-90 text-white text-sm font-medium rounded-xl transition-all"
             >
-              Удалить сервер
+              {t('Удалить сервер')}
             </button>
           )}
         </div>
@@ -392,7 +395,7 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
           disabled={saving}
           className="px-6 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium rounded-xl transition-all disabled:opacity-50 shadow-lg"
         >
-          {saved ? '✓ Сохранено!' : saving ? 'Сохранение...' : 'Сохранить'}
+          {saved ? t('✓ Сохранено!') : saving ? t('Сохранение...') : t('Сохранить')}
         </button>
       </div>
     </div>
@@ -400,6 +403,7 @@ function OverviewTab({ server, serverName, setServerName, description, setDescri
 }
 
 function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
+  const { t } = useI18n();
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState('text');
   const [editingChannel, setEditingChannel] = useState(null);
@@ -447,14 +451,14 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
   };
 
   const handleDelete = async (channelId) => {
-    if (!confirm('Удалить канал?')) return;
+    if (!confirm(t('Удалить канал?'))) return;
     await apiFetch(`/api/servers/${server.id}/channels/${channelId}`, { method: 'DELETE' });
     onUpdate({ ...server, channels: channels.filter(c => c.id !== channelId) });
   };
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Управление каналами</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Управление каналами')}</h2>
 
       {isAdmin && (
         <div className="flex gap-2 mb-6">
@@ -463,15 +467,15 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
             onChange={(e) => setNewType(e.target.value)}
             className="bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50"
           >
-            <option value="text">Текстовый</option>
-            <option value="voice">Голосовой</option>
-            <option value="forum">Форум</option>
+            <option value="text">{t('Текстовый')}</option>
+            <option value="voice">{t('Голосовой')}</option>
+            <option value="forum">{t('Форум')}</option>
           </select>
           <input
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Название канала"
+            placeholder={t('Название канала')}
             className="flex-1 bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50"
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
           />
@@ -480,7 +484,7 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
             disabled={creating || !newName.trim()}
             className="px-4 py-2 bg-discord-green hover:opacity-90 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1"
           >
-            <Plus size={16} /> Создать
+            <Plus size={16} /> {t('Создать')}
           </button>
         </div>
       )}
@@ -509,13 +513,13 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
                         onChange={(e) => setEditSlowmode(Number(e.target.value))}
                         className="bg-discord-dark border border-discord-light/20 rounded-xl px-2 py-1 text-discord-text text-xs focus:outline-none"
                       >
-                        <option value={0}>Без ограничений</option>
-                        <option value={5}>5 сек</option>
-                        <option value={10}>10 сек</option>
-                        <option value={30}>30 сек</option>
-                        <option value={60}>1 мин</option>
-                        <option value={120}>2 мин</option>
-                        <option value={300}>5 мин</option>
+                        <option value={0}>{t('Без ограничений')}</option>
+                        <option value={5}>{t('5 сек')}</option>
+                        <option value={10}>{t('10 сек')}</option>
+                        <option value={30}>{t('30 сек')}</option>
+                        <option value={60}>{t('1 мин')}</option>
+                        <option value={120}>{t('2 мин')}</option>
+                        <option value={300}>{t('5 мин')}</option>
                       </select>
                     </label>
                     <label className="flex items-center gap-1.5 text-xs text-discord-gray cursor-pointer">
@@ -523,7 +527,7 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
                         type="checkbox"
                         checked={editNsfw}
                         onChange={(e) => setEditNsfw(e.target.checked)}
-                        className="rounded"
+                        className="rounded-lg"
                       />
                       18+
                     </label>
@@ -534,7 +538,7 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
               <span className="flex-1 text-discord-text text-sm">{channel.name}</span>
             )}
 
-            <span className="text-xs text-discord-muted">{channel.type === 'voice' ? 'Голосовой' : channel.type === 'forum' ? 'Форум' : 'Текстовый'}</span>
+            <span className="text-xs text-discord-muted">{channel.type === 'voice' ? t('Голосовой') : channel.type === 'forum' ? t('Форум') : t('Текстовый')}</span>
 
             {isAdmin && editingChannel !== channel.id && (
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -562,6 +566,7 @@ function ChannelsTab({ server, channels, isAdmin, onUpdate }) {
 }
 
 function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
+  const { t } = useI18n();
   const [actionMember, setActionMember] = useState(null);
   const [actionType, setActionType] = useState('');
   const [reason, setReason] = useState('');
@@ -672,10 +677,10 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
 
   const getRoleBadge = (role) => {
     switch (role) {
-      case 'owner': return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Владелец' };
-      case 'admin': return { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Админ' };
-      case 'moderator': return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Модератор' };
-      default: return { bg: 'bg-discord-light/20', text: 'text-discord-gray', label: 'Участник' };
+      case 'owner': return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: t('Владелец') };
+      case 'admin': return { bg: 'bg-red-500/20', text: 'text-red-400', label: t('Админ') };
+      case 'moderator': return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: t('Модератор') };
+      default: return { bg: 'bg-discord-light/20', text: 'text-discord-gray', label: t('Участник') };
     }
   };
 
@@ -695,12 +700,12 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Участники ({members.length})</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Участники')} ({members.length})</h2>
       <input
         type="text"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder="Поиск участников..."
+        placeholder={t('Поиск участников...')}
         className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-sm text-white placeholder-discord-muted mb-4 focus:outline-none focus:border-discord-accent/50"
       />
 
@@ -723,11 +728,11 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
                   <span className="text-discord-text text-sm font-medium truncate">
                     {member.nickname || member.username}
                   </span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.bg} ${badge.text}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-lg ${badge.bg} ${badge.text}`}>
                     {badge.label}
                   </span>
                   {assignedRoles.map(r => (
-                    <span key={r.id} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: r.color + '30', color: r.color }}>
+                    <span key={r.id} className="text-[10px] px-1.5 py-0.5 rounded-lg" style={{ backgroundColor: r.color + '30', color: r.color }}>
                       {r.name}
                     </span>
                   ))}
@@ -748,9 +753,9 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
                       onChange={(e) => handleRoleChange(member, e.target.value)}
                       className="bg-discord-dark border border-discord-light/20 rounded-xl px-2 py-1 text-xs text-discord-text focus:outline-none focus:border-discord-accent/50"
                     >
-                      <option value="member">Участник</option>
-                      <option value="moderator">Модератор</option>
-                      <option value="admin">Админ</option>
+                      <option value="member">{t('Участник')}</option>
+                      <option value="moderator">{t('Модератор')}</option>
+                      <option value="admin">{t('Админ')}</option>
                     </select>
                   )}
                   <div className="relative" data-roles-menu>
@@ -758,21 +763,21 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
                       onClick={() => setOpenRolesMenu(openRolesMenu === memberId ? null : memberId)}
                       className="px-2 py-1 bg-discord-dark border border-discord-light/20 rounded-xl text-xs text-discord-text hover:bg-discord-light/20 transition-colors"
                     >
-                      Роли ▾
+                      {t('Роли ▾')}
                     </button>
                     {openRolesMenu === memberId && (
                       <div className="absolute right-0 top-full mt-1 bg-discord-dark rounded-xl shadow-xl border border-discord-light/20 p-2 z-20 w-48">
                         {roles.filter(r => !r.is_default).length === 0 ? (
-                          <p className="text-xs text-discord-muted px-2 py-1">Нет ролей</p>
+                          <p className="text-xs text-discord-muted px-2 py-1">{t('Нет ролей')}</p>
                         ) : roles.filter(r => !r.is_default).map(r => {
                           const isChecked = assignedRoles.some(ar => ar.id === r.id);
                           return (
-                            <label key={r.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-discord-light/20 cursor-pointer">
+                            <label key={r.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-discord-light/20 cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleToggleRole(member, r.id)}
-                                className="rounded"
+                                className="rounded-lg"
                               />
                               <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: r.color }} />
                               <span className="text-xs text-discord-text truncate">{r.name}</span>
@@ -785,14 +790,14 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
                   <button
                     onClick={() => { setActionMember(member); setActionType('kick'); }}
                     className="p-1 text-discord-gray hover:text-yellow-400 transition-colors"
-                    title="Кикнуть"
+                    title={t('Кикнуть')}
                   >
                     <UserMinus size={14} />
                   </button>
                   <button
                     onClick={() => { setActionMember(member); setActionType('ban'); }}
                     className="p-1 text-discord-gray hover:text-discord-red transition-colors"
-                    title="Забанить"
+                    title={t('Забанить')}
                   >
                     <Ban size={14} />
                   </button>
@@ -808,22 +813,22 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-60" onClick={() => setActionMember(null)}>
           <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-discord-white mb-4">
-              {actionType === 'kick' ? 'Кикнуть участника' : 'Забанить участника'}
+              {actionType === 'kick' ? t('Кикнуть участника') : t('Забанить участника')}
             </h3>
             <p className="text-discord-gray text-sm mb-4">
               {actionType === 'kick'
-                ? `Вы уверены что хотите кикнуть ${actionMember.username}?`
-                : `Вы уверены что хотите забанить ${actionMember.username}?`
+                  ? t('Вы уверены что хотите кикнуть {name}?', { name: actionMember.username })
+                  : t('Вы уверены что хотите забанить {name}?', { name: actionMember.username })
               }
             </p>
             {actionType === 'ban' && (
               <div className="mb-4">
-                <label className="block text-xs font-bold text-discord-accent uppercase tracking-wider mb-2">Причина</label>
+                <label className="block text-xs font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Причина')}</label>
                 <input
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Причина бана (необязательно)"
+                  placeholder={t('Причина бана (необязательно)')}
                   className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50"
                 />
               </div>
@@ -833,13 +838,13 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
                 onClick={() => setActionMember(null)}
                 className="px-4 py-2 text-sm text-discord-gray hover:text-white transition-colors"
               >
-                Отмена
+                {t('Отмена')}
               </button>
               <button
                 onClick={actionType === 'kick' ? handleKick : handleBan}
                 className="px-4 py-2 bg-discord-red hover:opacity-90 text-white text-sm font-medium rounded-xl transition-colors"
               >
-                {actionType === 'kick' ? 'Кикнуть' : 'Забанить'}
+                {actionType === 'kick' ? t('Кикнуть') : t('Забанить')}
               </button>
             </div>
           </div>
@@ -850,6 +855,7 @@ function MembersTab({ server, members, user, isAdmin, isOwner, onUpdate }) {
 }
 
 function BansTab({ server, isAdmin }) {
+  const { t } = useI18n();
   const [bans, setBans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -886,21 +892,21 @@ function BansTab({ server, isAdmin }) {
     return (
       <div className="text-center py-12">
         <Ban size={48} className="text-discord-muted mx-auto mb-4" />
-        <p className="text-discord-gray">У вас нет прав для просмотра банов</p>
+        <p className="text-discord-gray">{t('У вас нет прав для просмотра банов')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Забаненные участники</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Забаненные участники')}</h2>
 
       {loading ? (
-        <p className="text-discord-gray">Загрузка...</p>
+        <p className="text-discord-gray">{t('Загрузка...')}</p>
       ) : bans.length === 0 ? (
         <div className="text-center py-12">
           <Ban size={48} className="text-discord-muted mx-auto mb-4" />
-          <p className="text-discord-gray">Нет забаненных участников</p>
+          <p className="text-discord-gray">{t('Нет забаненных участников')}</p>
         </div>
       ) : (
         <>
@@ -908,7 +914,7 @@ function BansTab({ server, isAdmin }) {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Поиск забаненных..."
+            placeholder={t('Поиск забаненных...')}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-sm text-white placeholder-discord-muted mb-4 focus:outline-none focus:border-discord-accent/50"
           />
           <div className="space-y-1">
@@ -923,14 +929,14 @@ function BansTab({ server, isAdmin }) {
               <div className="flex-1 min-w-0">
                 <div className="text-discord-text text-sm font-medium">{ban.username}#{ban.tag}</div>
                 {ban.reason && (
-                  <div className="text-xs text-discord-muted">Причина: {ban.reason}</div>
+                  <div className="text-xs text-discord-muted">{t('Причина')}: {ban.reason}</div>
                 )}
               </div>
               <button
                 onClick={() => handleUnban(ban.user_id)}
                 className="px-3 py-1 bg-discord-green hover:opacity-90 text-white text-xs font-medium rounded-xl transition-colors"
               >
-                Разбанить
+                {t('Разбанить')}
               </button>
             </div>
           ))}
@@ -942,19 +948,20 @@ function BansTab({ server, isAdmin }) {
 }
 
 function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExplicitFilter, antiSpam, setAntiSpam, antiRaid, setAntiRaid, blockLinks, setBlockLinks, lockdown, setLockdown, slowmodeGlobal, setSlowmodeGlobal, maxRoleMembers, setMaxRoleMembers, onSave, saving, saved, isOwner }) {
+  const { t } = useI18n();
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Настройки безопасности</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Настройки безопасности')}</h2>
       {!isOwner && (
-        <p className="text-xs text-discord-yellow mb-4 bg-discord-yellow/10 border border-discord-yellow/30 px-3 py-2 rounded-xl">Только владелец сервера может менять настройки безопасности</p>
+        <p className="text-xs text-discord-yellow mb-4 bg-discord-yellow/10 border border-discord-yellow/30 px-3 py-2 rounded-xl">{t('Только владелец сервера может менять настройки безопасности')}</p>
       )}
 
       <div className="space-y-4">
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Режим блокировки (Lockdown)</p>
-              <p className="text-xs text-discord-muted mt-0.5">Только модераторы и выше могут писать в чат</p>
+              <p className="text-sm font-medium text-white">{t('Режим блокировки (Lockdown)')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Только модераторы и выше могут писать в чат')}</p>
             </div>
             <button
               disabled={!isOwner}
@@ -969,8 +976,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Блокировка ссылок</p>
-              <p className="text-xs text-discord-muted mt-0.5">Запретить отправку ссылок всем участникам</p>
+              <p className="text-sm font-medium text-white">{t('Блокировка ссылок')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Запретить отправку ссылок всем участникам')}</p>
             </div>
             <button
               disabled={!isOwner}
@@ -985,8 +992,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Фильтр контента 18+</p>
-              <p className="text-xs text-discord-muted mt-0.5">Блокировать ссылки для участников без ролей</p>
+              <p className="text-sm font-medium text-white">{t('Фильтр контента 18+')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Блокировать ссылки для участников без ролей')}</p>
             </div>
             <button
               disabled={!isOwner}
@@ -1001,8 +1008,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Анти-спам</p>
-              <p className="text-xs text-discord-muted mt-0.5">Ограничить частоту отправки сообщений</p>
+              <p className="text-sm font-medium text-white">{t('Анти-спам')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Ограничить частоту отправки сообщений')}</p>
             </div>
             <select
               disabled={!isOwner}
@@ -1010,9 +1017,9 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
               onChange={(e) => setAntiSpam(Number(e.target.value))}
               className="bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-1.5 text-sm text-discord-text focus:outline-none focus:border-discord-accent/50"
             >
-              <option value={0}>Выкл</option>
-              <option value={1}>Мягкий (5 сек)</option>
-              <option value={2}>Строгий (3 сек)</option>
+              <option value={0}>{t('Выкл')}</option>
+              <option value={1}>{t('Мягкий (5 сек)')}</option>
+              <option value={2}>{t('Строгий (3 сек)')}</option>
             </select>
           </div>
         </div>
@@ -1020,8 +1027,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Анти-рейд</p>
-              <p className="text-xs text-discord-muted mt-0.5">Автоматически банить подозрительные массовые входы</p>
+              <p className="text-sm font-medium text-white">{t('Анти-рейд')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Автоматически банить подозрительные массовые входы')}</p>
             </div>
             <button
               disabled={!isOwner}
@@ -1036,8 +1043,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Требовать 2FA для модераторов</p>
-              <p className="text-xs text-discord-muted mt-0.5">Модераторы обязаны включить двухфакторную аутентификацию</p>
+              <p className="text-sm font-medium text-white">{t('Требовать 2FA для модераторов')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Модераторы обязаны включить двухфакторную аутентификацию')}</p>
             </div>
             <button
               disabled={!isOwner}
@@ -1052,8 +1059,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Глобальный слоумод</p>
-              <p className="text-xs text-discord-muted mt-0.5">Задержка между сообщениями для всех каналов (сек)</p>
+              <p className="text-sm font-medium text-white">{t('Глобальный слоумод')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Задержка между сообщениями для всех каналов (сек)')}</p>
             </div>
             <select
               disabled={!isOwner}
@@ -1061,11 +1068,11 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
               onChange={(e) => setSlowmodeGlobal(Number(e.target.value))}
               className="bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-1.5 text-sm text-discord-text focus:outline-none focus:border-discord-accent/50"
             >
-              <option value={0}>Выкл</option>
-              <option value={5}>5 сек</option>
-              <option value={10}>10 сек</option>
-              <option value={30}>30 сек</option>
-              <option value={60}>1 мин</option>
+              <option value={0}>{t('Выкл')}</option>
+              <option value={5}>{t('5 сек')}</option>
+              <option value={10}>{t('10 сек')}</option>
+              <option value={30}>{t('30 сек')}</option>
+              <option value={60}>{t('1 мин')}</option>
             </select>
           </div>
         </div>
@@ -1073,8 +1080,8 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
         <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">Лимит участников на роль</p>
-              <p className="text-xs text-discord-muted mt-0.5">Макс. число людей, которым можно назначить одну роль (0 = без лимита)</p>
+              <p className="text-sm font-medium text-white">{t('Лимит участников на роль')}</p>
+              <p className="text-xs text-discord-muted mt-0.5">{t('Макс. число людей, которым можно назначить одну роль (0 = без лимита)')}</p>
             </div>
             <select
               disabled={!isOwner}
@@ -1082,7 +1089,7 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
               onChange={(e) => setMaxRoleMembers(Number(e.target.value))}
               className="bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-1.5 text-sm text-discord-text focus:outline-none focus:border-discord-accent/50"
             >
-              <option value={0}>Без лимита</option>
+              <option value={0}>{t('Без лимита')}</option>
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -1098,7 +1105,7 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
           disabled={saving || !isOwner}
           className="px-6 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 shadow-lg text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
         >
-          {saved ? '✓ Сохранено!' : saving ? 'Сохранение...' : 'Сохранить'}
+          {saved ? t('✓ Сохранено!') : saving ? t('Сохранение...') : t('Сохранить')}
         </button>
       </div>
     </div>
@@ -1106,6 +1113,7 @@ function SecurityTab({ server, require2fa, setRequire2fa, explicitFilter, setExp
 }
 
 function RolesTab({ server, isAdmin }) {
+  const { t } = useI18n();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
@@ -1119,16 +1127,16 @@ function RolesTab({ server, isAdmin }) {
   const PRESET_COLORS = ['#99aab5', '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c', '#3498db', '#9b59b6', '#e91e63', '#00bcd4'];
 
   const PERMISSIONS = [
-    { bit: 1, label: 'Отправлять сообщения', desc: 'Может писать в текстовых каналах' },
-    { bit: 2, label: 'Управлять сообщениями', desc: 'Удалять и редактировать чужие сообщения' },
-    { bit: 4, label: 'Прикреплять файлы', desc: 'Может загружать файлы' },
-    { bit: 8, label: 'Добавлять реакции', desc: 'Может ставить реакции на сообщения' },
-    { bit: 16, label: 'Управлять каналами', desc: 'Создавать, редактировать, удалять каналы' },
-    { bit: 32, label: 'Управлять ролями', desc: 'Создавать, редактировать, удалять роли' },
-    { bit: 64, label: 'Кикать участников', desc: 'Исключать участников из сервера' },
-    { bit: 128, label: 'Банить участников', desc: 'Блокировать участников на сервере' },
-    { bit: 256, label: 'Управлять сервером', desc: 'Изменять название, описание, иконку сервера' },
-    { bit: 512, label: 'Закреплять сообщения', desc: 'Закреплять сообщения в каналах' },
+    { bit: 1, label: t('Отправлять сообщения'), desc: t('Может писать в текстовых каналах') },
+    { bit: 2, label: t('Управлять сообщениями'), desc: t('Удалять и редактировать чужие сообщения') },
+    { bit: 4, label: t('Прикреплять файлы'), desc: t('Может загружать файлы') },
+    { bit: 8, label: t('Добавлять реакции'), desc: t('Может ставить реакции на сообщения') },
+    { bit: 16, label: t('Управлять каналами'), desc: t('Создавать, редактировать, удалять каналы') },
+    { bit: 32, label: t('Управлять ролями'), desc: t('Создавать, редактировать, удалять роли') },
+    { bit: 64, label: t('Кикать участников'), desc: t('Исключать участников из сервера') },
+    { bit: 128, label: t('Банить участников'), desc: t('Блокировать участников на сервере') },
+    { bit: 256, label: t('Управлять сервером'), desc: t('Изменять название, описание, иконку сервера') },
+    { bit: 512, label: t('Закреплять сообщения'), desc: t('Закреплять сообщения в каналах') },
   ];
 
   const apiFetch = async (url, options = {}) => {
@@ -1180,7 +1188,7 @@ function RolesTab({ server, isAdmin }) {
   };
 
   const handleDelete = async (roleId) => {
-    if (!confirm('Удалить роль? Участники потеряют её.')) return;
+    if (!confirm(t('Удалить роль? Участники потеряют её.'))) return;
     await apiFetch(`/api/messages/roles/${server.id}/${roleId}`, { method: 'DELETE' });
     setRoles(roles.filter(r => r.id !== roleId));
   };
@@ -1190,33 +1198,33 @@ function RolesTab({ server, isAdmin }) {
   };
 
   const formatPermissions = (perms) => {
-    if (!perms) return 'Без прав';
+    if (!perms) return t('Без прав');
     const names = PERMISSIONS.filter(p => perms & p.bit).map(p => p.label);
-    return names.length > 0 ? names.join(', ') : 'Без прав';
+    return names.length > 0 ? names.join(', ') : t('Без прав');
   };
 
   if (!isAdmin) {
     return (
       <div className="text-center py-12">
         <Shield size={48} className="text-discord-muted mx-auto mb-4" />
-        <p className="text-discord-gray">У вас нет прав для управления ролями</p>
+        <p className="text-discord-gray">{t('У вас нет прав для управления ролями')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Роли сервера</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Роли сервера')}</h2>
 
       {/* Create new role */}
       <div className="bg-discord-dark border border-discord-light/20 rounded-xl p-4 mb-6">
-        <p className="text-sm font-bold text-white mb-3">Создать новую роль</p>
+        <p className="text-sm font-bold text-white mb-3">{t('Создать новую роль')}</p>
         <div className="flex gap-2 mb-3">
           <input
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Название роли"
+            placeholder={t('Название роли')}
             className="flex-1 bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50"
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
           />
@@ -1224,15 +1232,15 @@ function RolesTab({ server, isAdmin }) {
             type="color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            className="w-10 h-10 rounded cursor-pointer border-none bg-transparent"
-            title="Цвет роли"
+            className="w-10 h-10 rounded-lg cursor-pointer border-none bg-transparent"
+            title={t('Цвет роли')}
           />
           <button
             onClick={handleCreate}
             disabled={!newName.trim()}
             className="px-4 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 shadow-lg text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1"
           >
-            <Plus size={16} /> Создать
+            <Plus size={16} /> {t('Создать')}
           </button>
         </div>
         <div className="flex gap-1 flex-wrap">
@@ -1249,16 +1257,16 @@ function RolesTab({ server, isAdmin }) {
 
       {/* Roles list */}
       {loading ? (
-        <p className="text-discord-gray">Загрузка...</p>
+        <p className="text-discord-gray">{t('Загрузка...')}</p>
       ) : roles.length === 0 ? (
         <div className="text-center py-12">
           <Shield size={48} className="text-discord-muted mx-auto mb-4" />
-          <p className="text-discord-gray">Нет ролей. Создайте первую роль выше.</p>
+          <p className="text-discord-gray">{t('Нет ролей. Создайте первую роль выше.')}</p>
         </div>
       ) : (
         <div className="space-y-1">
           {roles.length === 0 ? (
-            <p className="text-discord-gray">Нет ролей. Создайте первую роль выше.</p>
+            <p className="text-discord-gray">{t('Нет ролей. Создайте первую роль выше.')}</p>
           ) : roles.map(role => (
             <div key={role.id} className="bg-discord-dark border border-discord-light/20 rounded-xl group">
               <div className="flex items-center gap-3 px-3 py-2 hover:bg-discord-light/10 transition-colors">
@@ -1279,10 +1287,10 @@ function RolesTab({ server, isAdmin }) {
                       type="color"
                       value={editColor}
                       onChange={(e) => setEditColor(e.target.value)}
-                      className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"
+                      className="w-8 h-8 rounded-lg cursor-pointer border-none bg-transparent"
                     />
-                    <button onClick={() => handleUpdate(role.id)} className="text-xs text-discord-blurple hover:underline">OK</button>
-                    <button onClick={() => setEditingRole(null)} className="text-xs text-discord-gray hover:underline">Отмена</button>
+                    <button onClick={() => handleUpdate(role.id)} className="text-xs text-discord-blurple hover:underline">{t('ОК')}</button>
+                    <button onClick={() => setEditingRole(null)} className="text-xs text-discord-gray hover:underline">{t('Отмена')}</button>
                   </div>
                 ) : (
                   <>
@@ -1294,7 +1302,7 @@ function RolesTab({ server, isAdmin }) {
                       <button
                         onClick={() => { setShowPerms(showPerms === role.id ? null : role.id); }}
                         className="p-1 text-discord-gray hover:text-green-400 transition-colors"
-                        title="Права"
+                        title={t('Права')}
                       >
                         <Shield size={14} />
                       </button>
@@ -1320,10 +1328,10 @@ function RolesTab({ server, isAdmin }) {
               {/* Permissions panel */}
               {showPerms === role.id && editingRole !== role.id && (
                 <div className="px-3 pb-3 pt-1 border-t border-discord-light/10">
-                  <p className="text-xs font-bold text-discord-accent uppercase tracking-wider mb-2">Права роли</p>
+                  <p className="text-xs font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Права роли')}</p>
                   <div className="grid grid-cols-2 gap-1">
                     {PERMISSIONS.map(p => (
-                      <label key={p.bit} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-discord-light/10 cursor-pointer">
+                      <label key={p.bit} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-discord-light/10 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={!!(role.permissions & p.bit)}
@@ -1337,7 +1345,7 @@ function RolesTab({ server, isAdmin }) {
                               setRoles(roles.map(r => r.id === role.id ? data : r));
                             }
                           }}
-                          className="rounded"
+                          className="rounded-lg"
                         />
                         <div>
                           <span className="text-xs text-discord-text">{p.label}</span>

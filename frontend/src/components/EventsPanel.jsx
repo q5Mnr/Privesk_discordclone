@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Plus, X, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiGet, apiPost, apiDelete } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 function CreateEventModal({ onClose, onCreate, serverId }) {
   const [title, setTitle] = useState('');
@@ -10,6 +11,7 @@ function CreateEventModal({ onClose, onCreate, serverId }) {
   const [endDate, setEndDate] = useState('');
   const [endTime, setEndTime] = useState('');
   const [location, setLocation] = useState('');
+  const { t } = useI18n();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,17 +25,17 @@ function CreateEventModal({ onClose, onCreate, serverId }) {
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-discord-darker border border-discord-light/20 rounded-2xl p-5 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-discord-white">Создать событие</h3>
+          <h3 className="text-lg font-bold text-discord-white">{t('Создать событие')}</h3>
           <button onClick={onClose} className="text-discord-muted hover:text-discord-white p-1 rounded-xl hover:bg-discord-light/30 transition-all"><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Название события" autoFocus
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Название события')} autoFocus
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
-          <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Описание"
+          <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={t('Описание')}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text text-sm focus:outline-none resize-none h-16 focus:border-discord-accent/50 transition-colors" />
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-discord-muted mb-1 block">Начало</label>
+              <label className="text-xs text-discord-muted mb-1 block">{t('Начало')}</label>
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                 className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
             </div>
@@ -45,7 +47,7 @@ function CreateEventModal({ onClose, onCreate, serverId }) {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-discord-muted mb-1 block">Конец</label>
+              <label className="text-xs text-discord-muted mb-1 block">{t('Конец')}</label>
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                 className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
             </div>
@@ -55,11 +57,11 @@ function CreateEventModal({ onClose, onCreate, serverId }) {
                 className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-3 py-2 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
             </div>
           </div>
-          <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Место (необязательно)"
+          <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('Место (необязательно)')}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors" />
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-discord-muted hover:text-discord-white border border-discord-light/30 rounded-xl transition-colors">Отмена</button>
-            <button type="submit" disabled={!title || !startDate || !startTime} className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white rounded-xl font-medium disabled:opacity-50 transition-all shadow-lg">Создать</button>
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-discord-muted hover:text-discord-white border border-discord-light/30 rounded-xl transition-colors">{t('Отмена')}</button>
+            <button type="submit" disabled={!title || !startDate || !startTime} className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white rounded-xl font-medium disabled:opacity-50 transition-all shadow-lg">{t('Создать')}</button>
           </div>
         </form>
       </div>
@@ -72,6 +74,7 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
   const [showCreate, setShowCreate] = useState(false);
   const [view, setView] = useState('list');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const { t } = useI18n();
 
   useEffect(() => { if (serverId) loadEvents(); }, [serverId]);
 
@@ -98,7 +101,7 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
   };
 
   const handleDelete = async (eventId) => {
-    if (!confirm('Удалить событие?')) return;
+    if (!confirm(t('Удалить событие?'))) return;
     try {
       await apiDelete(`/api/events/${eventId}`);
       loadEvents();
@@ -142,13 +145,13 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
       <div className="bg-discord-darker border border-discord-light/20 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="h-16 px-6 flex items-center border-b border-discord-light/20 flex-shrink-0 gap-3">
           <Calendar size={18} className="text-discord-accent" />
-          <h3 className="text-discord-white font-semibold flex-1">События сервера</h3>
+          <h3 className="text-discord-white font-semibold flex-1">{t('События сервера')}</h3>
           <div className="flex gap-1">
-            <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${view === 'list' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/30'}`}>Список</button>
-            <button onClick={() => setView('calendar')} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${view === 'calendar' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/30'}`}>Календарь</button>
+            <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${view === 'list' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/30'}`}>{t('Список')}</button>
+            <button onClick={() => setView('calendar')} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${view === 'calendar' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white hover:bg-discord-light/30'}`}>{t('Календарь')}</button>
           </div>
           <button onClick={() => setShowCreate(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-xs font-medium transition-all shadow-lg">
-            <Plus size={14} /> Новое
+            <Plus size={14} /> {t('Новое')}
           </button>
           <button onClick={onClose} className="text-discord-muted hover:text-discord-white ml-1 p-1.5 rounded-xl hover:bg-discord-light/30 transition-all"><X size={18} /></button>
         </div>
@@ -163,7 +166,7 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
               </div>
               <div className="grid grid-cols-7 gap-px bg-discord-light/20 rounded-xl overflow-hidden">
                 {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => (
-                  <div key={d} className="bg-discord-darker px-1 py-2 text-center text-xs text-discord-muted font-semibold">{d}</div>
+                  <div key={d} className="bg-discord-darker px-1 py-2 text-center text-xs text-discord-muted font-semibold">{t(d)}</div>
                 ))}
                 {calDays().map((day, i) => {
                   const dayEvents = eventsOnDay(day);
@@ -189,7 +192,7 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
             <>
               {upcoming.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-xs font-semibold text-discord-muted uppercase mb-2">Предстоящие</h4>
+                  <h4 className="text-xs font-semibold text-discord-muted uppercase mb-2">{t('Предстоящие')}</h4>
                   {upcoming.map(ev => (
                     <div key={ev.id} className="bg-discord-dark border border-discord-light/20 rounded-xl p-3 mb-2 hover:border-discord-accent/30 transition-all">
                       <div className="flex items-start gap-3">
@@ -206,16 +209,16 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <button onClick={() => handleRsvp(ev.id, 'going')} className="px-2.5 py-1 rounded-xl text-xs font-medium bg-discord-green/20 text-discord-green hover:bg-discord-green/30 transition-colors">
-                              <Users size={11} className="inline mr-1" />{ev.going_count || 0} Иду
+                              <Users size={11} className="inline mr-1" />{ev.going_count || 0} {t('Иду')}
                             </button>
                             <button onClick={() => handleRsvp(ev.id, 'maybe')} className="px-2.5 py-1 rounded-xl text-xs font-medium bg-discord-yellow/20 text-discord-yellow hover:bg-discord-yellow/30 transition-colors">
-                              Возможно
+                              {t('Возможно')}
                             </button>
                             <button onClick={() => handleRsvp(ev.id, 'not_going')} className="px-2.5 py-1 rounded-xl text-xs font-medium bg-discord-light/30 text-discord-muted hover:text-discord-white transition-colors">
-                              Не иду
+                              {t('Не иду')}
                             </button>
                             <button onClick={() => handleDelete(ev.id)} className="ml-auto px-2 py-1 rounded-xl text-xs text-discord-red hover:bg-discord-red/10 transition-colors">
-                              Удалить
+                              {t('Удалить')}
                             </button>
                           </div>
                         </div>
@@ -226,7 +229,7 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
               )}
               {past.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-discord-muted uppercase mb-2">Прошедшие</h4>
+                  <h4 className="text-xs font-semibold text-discord-muted uppercase mb-2">{t('Прошедшие')}</h4>
                   {past.map(ev => (
                     <div key={ev.id} className="bg-discord-dark/50 border border-discord-light/10 rounded-xl p-3 mb-2 opacity-60">
                       <h5 className="text-discord-muted font-medium text-sm line-through">{ev.title}</h5>
@@ -238,8 +241,8 @@ export default function EventsPanel({ serverId, onClose, onOpenThread }) {
               {events.length === 0 && (
                 <div className="text-center py-12">
                   <Calendar size={48} className="mx-auto mb-3 text-discord-muted" />
-                  <h4 className="text-discord-white font-bold mb-1">Нет событий</h4>
-                  <p className="text-discord-muted text-sm">Создайте первое событие для сервера</p>
+                  <h4 className="text-discord-white font-bold mb-1">{t('Нет событий')}</h4>
+                  <p className="text-discord-muted text-sm">{t('Создайте первое событие для сервера')}</p>
                 </div>
               )}
             </>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Search, Check, X, MoreVertical, MessageCircle, Trash2, Clock } from 'lucide-react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function FriendsPage({ onSelectDm }) {
   const [tab, setTab] = useState('online');
@@ -14,6 +15,7 @@ export default function FriendsPage({ onSelectDm }) {
   const [addFriendError, setAddFriendError] = useState('');
   const [addFriendSuccess, setAddFriendSuccess] = useState('');
   const [actionMenu, setActionMenu] = useState(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     loadFriends();
@@ -22,8 +24,8 @@ export default function FriendsPage({ onSelectDm }) {
     const handleFriendRequest = (e) => {
       loadPending();
       if (Notification.permission === 'granted') {
-        new Notification('Новая заявка в друзья', {
-          body: `${e.detail.fromUsername} хочет добавить вас в друзья`,
+        new Notification(t('Новая заявка в друзья'), {
+          body: t('{username} хочет добавить вас в друзья', { username: e.detail.fromUsername }),
           icon: e.detail.fromAvatar || undefined
         });
       }
@@ -70,21 +72,21 @@ export default function FriendsPage({ onSelectDm }) {
     try {
       const cleanTag = addFriendInput.replace(/[^a-z0-9]/gi, '').toLowerCase();
       if (cleanTag.length < 2) {
-        setAddFriendError('Введите минимум 2 символа тега');
+        setAddFriendError(t('Введите минимум 2 символа тега'));
         setLoading(false);
         return;
       }
 
       const results = await apiGet(`/api/auth/search?q=${encodeURIComponent(cleanTag)}`);
       if (results.length === 0) {
-        setAddFriendError('Пользователь не найден по этому тегу');
+        setAddFriendError(t('Пользователь не найден по этому тегу'));
         setLoading(false);
         return;
       }
 
       const targetUser = results[0];
       const res = await apiPost(`/api/auth/friends/${targetUser.id}`);
-      setAddFriendSuccess(res.message || `Заявка отправлена ${targetUser.username}#${targetUser.tag}!`);
+      setAddFriendSuccess(res.message || t('Заявка отправлена {username}#{tag}!', { username: targetUser.username, tag: targetUser.tag }));
       setAddFriendInput('');
       loadPending();
     } catch (err) {
@@ -185,25 +187,25 @@ export default function FriendsPage({ onSelectDm }) {
       <div className="h-14 px-4 flex items-center border-b border-discord-light/20 shadow-sm flex-shrink-0 gap-4">
         <div className="flex items-center gap-2 text-discord-white font-semibold">
           <MessageCircle size={20} className="text-discord-accent" />
-          Друзья
+          {t('Друзья')}
         </div>
 
         <div className="w-px h-6 bg-discord-light/30" />
 
-        {tabs.map(t => (
+        {tabs.map(tabItem => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={tabItem.id}
+            onClick={() => setTab(tabItem.id)}
             className={`px-3 py-1 rounded-xl text-sm transition-all duration-200 ${
-              tab === t.id
+              tab === tabItem.id
                 ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30'
                 : 'text-discord-gray hover:text-discord-text hover:bg-discord-light/30'
             }`}
           >
-            {t.label}
-            {t.count > 0 && (
+            {t(tabItem.label)}
+            {tabItem.count > 0 && (
               <span className="ml-1.5 bg-discord-mid text-[10px] px-1.5 py-0.5 rounded-full text-discord-gray border border-discord-light/20">
-                {t.count}
+                {tabItem.count}
               </span>
             )}
           </button>
@@ -217,7 +219,7 @@ export default function FriendsPage({ onSelectDm }) {
               : 'bg-gradient-to-r from-discord-green to-emerald-400 hover:shadow-lg hover:shadow-discord-green/30 text-discord-darker'
           }`}
         >
-          Добавить в друзья
+          {t('Добавить в друзья')}
         </button>
       </div>
 
@@ -225,9 +227,9 @@ export default function FriendsPage({ onSelectDm }) {
         {/* Add Friend Panel */}
         {showAddFriend && (
           <div className="p-4 border-b border-discord-light/20">
-            <h3 className="text-discord-white font-semibold mb-1">Добавить в друзья</h3>
+            <h3 className="text-discord-white font-semibold mb-1">{t('Добавить в друзья')}</h3>
             <p className="text-sm text-discord-gray mb-3">
-              Введите тег пользователя (например: #e114)
+              {t('Введите тег пользователя (например: #e114)')}
             </p>
 
             <div className="flex gap-2">
@@ -238,7 +240,7 @@ export default function FriendsPage({ onSelectDm }) {
                   value={addFriendInput}
                   onChange={(e) => setAddFriendInput(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 4))}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddFriend()}
-                  placeholder="тег"
+                  placeholder={t('тег')}
                   maxLength={4}
                   className="w-full bg-discord-mid border border-discord-light/20 rounded-xl pl-7 pr-3 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 font-mono transition-colors"
                 />
@@ -248,7 +250,7 @@ export default function FriendsPage({ onSelectDm }) {
                 disabled={loading || !addFriendInput.trim()}
                 className="px-4 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white text-sm font-medium rounded-xl transition-all duration-200 disabled:opacity-50"
               >
-                {loading ? 'Поиск...' : 'Отправить заявку'}
+                {loading ? t('Поиск...') : t('Отправить заявку')}
               </button>
             </div>
 
@@ -270,7 +272,7 @@ export default function FriendsPage({ onSelectDm }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearchUsers(e.target.value)}
-                placeholder="Поиск"
+                placeholder={t('Поиск')}
                 className="w-full bg-discord-mid border border-discord-light/20 rounded-xl pl-9 pr-3 py-2 text-sm text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors placeholder-discord-muted"
               />
             </div>
@@ -284,10 +286,10 @@ export default function FriendsPage({ onSelectDm }) {
             <div>
               {/* Incoming */}
               <h4 className="text-[11px] font-bold text-discord-muted uppercase tracking-wider mb-2 px-2">
-                Входящие заявки — {pending.incoming.length}
+                {t('Входящие заявки')} — {pending.incoming.length}
               </h4>
               {pending.incoming.length === 0 && (
-                <p className="text-sm text-discord-muted px-2 mb-4">Нет входящих заявок</p>
+                <p className="text-sm text-discord-muted px-2 mb-4">{t('Нет входящих заявок')}</p>
               )}
               {pending.incoming.map(friend => (
                 <div key={friend.request_id} className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-discord-light/20 transition-all duration-200 group mb-1">
@@ -308,7 +310,7 @@ export default function FriendsPage({ onSelectDm }) {
                     <div className="text-white font-medium">{friend.username}<span className="text-discord-muted font-normal text-sm">#{friend.tag}</span></div>
                     <div className="text-xs text-discord-muted flex items-center gap-1">
                       <Clock size={10} />
-                      Входящая заявка
+                      {t('Входящая заявка')}
                     </div>
                   </div>
 
@@ -316,14 +318,14 @@ export default function FriendsPage({ onSelectDm }) {
                     <button
                       onClick={() => handleAcceptFriend(friend.id)}
                       className="p-2 rounded-full bg-discord-green/20 text-discord-green hover:bg-discord-green/30 transition-colors"
-                      title="Принять"
+                      title={t('Принять')}
                     >
                       <Check size={16} />
                     </button>
                     <button
                       onClick={() => handleRejectFriend(friend.id)}
                       className="p-2 rounded-full bg-discord-red/20 text-discord-red hover:bg-discord-red/30 transition-colors"
-                      title="Отклонить"
+                      title={t('Отклонить')}
                     >
                       <X size={16} />
                     </button>
@@ -333,13 +335,13 @@ export default function FriendsPage({ onSelectDm }) {
 
               {/* Outgoing */}
               <h4 className="text-xs font-semibold text-discord-gray uppercase tracking-wide mb-2 mt-6 px-1">
-                Исходящие заявки — {pending.outgoing.length}
+                {t('Исходящие заявки')} — {pending.outgoing.length}
               </h4>
               {pending.outgoing.length === 0 && (
-                <p className="text-sm text-discord-muted px-1 mb-4">Нет исходящих заявок</p>
+                <p className="text-sm text-discord-muted px-1 mb-4">{t('Нет исходящих заявок')}</p>
               )}
               {pending.outgoing.map(friend => (
-                <div key={friend.request_id} className="flex items-center gap-3 px-2 py-2 rounded hover:bg-discord-light/20 transition-colors group mb-1">
+                <div key={friend.request_id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-discord-light/20 transition-colors group mb-1">
                   <div className="relative flex-shrink-0">
                     <div className="w-10 h-10 rounded-full bg-discord-blurple flex items-center justify-center text-white font-medium">
                       {friend.avatar ? (
@@ -357,14 +359,14 @@ export default function FriendsPage({ onSelectDm }) {
                     <div className="text-discord-white font-medium">{friend.username}<span className="text-discord-muted font-normal text-sm">#{friend.tag}</span></div>
                     <div className="text-xs text-discord-muted flex items-center gap-1">
                       <Clock size={10} />
-                      Ожидает ответа
+                      {t('Ожидает ответа')}
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleRejectFriend(friend.id)}
                     className="p-2 rounded-xl bg-discord-red/20 text-discord-red hover:bg-discord-red/30 transition-colors"
-                    title="Отменить"
+                    title={t('Отменить')}
                   >
                     <X size={16} />
                   </button>
@@ -377,13 +379,13 @@ export default function FriendsPage({ onSelectDm }) {
           {tab !== 'pending' && (
             <div>
               <h4 className="text-[11px] font-bold text-discord-muted uppercase tracking-wider mb-2 px-2">
-                {tab === 'online' ? 'В сети' : 'Все'} — {displayFriends.length}
+                {tab === 'online' ? t('В сети') : t('Все')} — {displayFriends.length}
               </h4>
 
               {displayFriends.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-discord-muted">
-                    {searchQuery ? 'Никого не найдено' : 'Пока нет друзей'}
+                    {searchQuery ? t('Никого не найдено') : t('Пока нет друзей')}
                   </p>
                 </div>
               )}
@@ -409,7 +411,7 @@ export default function FriendsPage({ onSelectDm }) {
                   <div className="flex-1 min-w-0">
                     <div className="text-discord-white font-medium">{friend.username}<span className="text-discord-muted font-normal text-sm">#{friend.tag}</span></div>
                     <div className="text-xs text-discord-muted">
-                      {friend.status === 'online' ? 'В сети' : 'Не в сети'}
+                      {friend.status === 'online' ? t('В сети') : t('Не в сети')}
                     </div>
                   </div>
 
@@ -417,7 +419,7 @@ export default function FriendsPage({ onSelectDm }) {
                     <button
                       onClick={() => handleStartDm(friend.id)}
                       className="p-1.5 rounded-xl bg-discord-mid hover:bg-discord-accent/20 text-discord-gray hover:text-discord-accent transition-all duration-200"
-                      title="Написать сообщение"
+                      title={t('Написать сообщение')}
                     >
                       <MessageCircle size={18} />
                     </button>
@@ -437,14 +439,14 @@ export default function FriendsPage({ onSelectDm }) {
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-discord-gray hover:bg-discord-accent/10 hover:text-discord-accent transition-colors"
                           >
                             <MessageCircle size={14} />
-                            Написать сообщение
+                            {t('Написать сообщение')}
                           </button>
                           <button
                             onClick={() => handleRemoveFriend(friend.id)}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-discord-red hover:bg-discord-red/10 transition-colors"
                           >
                             <Trash2 size={14} />
-                            Удалить из друзей
+                            {t('Удалить из друзей')}
                           </button>
                         </div>
                       )}
@@ -458,7 +460,7 @@ export default function FriendsPage({ onSelectDm }) {
           {/* Blocked Tab (placeholder) */}
           {tab === 'blocked' && (
             <div className="text-center py-12">
-              <p className="text-discord-muted">Список заблокированных пуст</p>
+              <p className="text-discord-muted">{t('Список заблокированных пуст')}</p>
             </div>
           )}
         </div>

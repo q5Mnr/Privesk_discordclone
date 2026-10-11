@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Plus, Users, UserCheck, Search } from 'lucide-react';
 import { apiGet } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function DmSidebar({ dmChannels, onSelectDm, onSelectFriends, showFriends, user }) {
   const [pendingCount, setPendingCount] = useState(0);
+  const { t } = useI18n();
 
   useEffect(() => {
     loadPendingCount();
@@ -21,13 +23,13 @@ export default function DmSidebar({ dmChannels, onSelectDm, onSelectFriends, sho
   };
 
   return (
-    <div className="w-60 bg-discord-darker flex flex-col flex-shrink-0 border-r border-discord-light/30">
+    <div className="w-60 bg-discord-darker flex flex-col flex-shrink-0 border border-discord-light/20 rounded-2xl overflow-hidden">
       <div className="h-14 px-4 flex items-center border-b border-discord-light/20">
         <div className="relative w-full">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-discord-muted" />
           <input
             type="text"
-            placeholder="Найти или начать чат"
+            placeholder={t('Найти или начать чат')}
             className="w-full bg-discord-mid text-sm text-discord-text pl-8 pr-3 py-2 rounded-xl border border-discord-light/20 focus:outline-none focus:border-discord-accent/50 transition-colors placeholder-discord-muted"
           />
         </div>
@@ -43,7 +45,7 @@ export default function DmSidebar({ dmChannels, onSelectDm, onSelectFriends, sho
           }`}
         >
           <UserCheck size={20} className={showFriends ? 'text-discord-accent' : ''} />
-          <span className="flex-1 text-left font-medium">Друзья</span>
+          <span className="flex-1 text-left font-medium">{t('Друзья')}</span>
           {pendingCount > 0 && (
             <span className="bg-discord-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
               {pendingCount}
@@ -53,7 +55,7 @@ export default function DmSidebar({ dmChannels, onSelectDm, onSelectFriends, sho
 
         <div className="flex items-center justify-between px-2 mb-1 mt-4">
           <h4 className="text-[11px] font-bold text-discord-muted uppercase tracking-wider">
-            Личные сообщения
+            {t('Личные сообщения')}
           </h4>
           <button className="text-discord-muted hover:text-discord-accent transition-colors">
             <Plus size={16} />
@@ -85,7 +87,7 @@ export default function DmSidebar({ dmChannels, onSelectDm, onSelectFriends, sho
               </div>
               <div className="min-w-0 flex-1 text-left">
                 <span className="text-discord-gray group-hover:text-discord-text transition-colors truncate block font-medium text-sm">
-                  {otherUser?.username || 'Пользователь'}
+                  {otherUser?.username || t('Пользователь')}
                 </span>
               </div>
             </button>

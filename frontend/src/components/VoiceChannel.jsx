@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Phone, PhoneOff, Mic, MicOff, Headphones, HeadphoneOff, Volume2 } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function VoiceChannel({ channel, server, socket, user }) {
   const [connected, setConnected] = useState(false);
@@ -9,6 +10,7 @@ export default function VoiceChannel({ channel, server, socket, user }) {
   const [videoEnabled, setVideoEnabled] = useState(false);
   const localStreamRef = useRef(null);
   const peersRef = useRef({});
+  const { t } = useI18n();
 
   useEffect(() => {
     const handleVoiceUsers = (e) => {
@@ -106,7 +108,7 @@ export default function VoiceChannel({ channel, server, socket, user }) {
               className={`p-3 rounded-full transition-colors ${
                 muted ? 'bg-discord-red text-white' : 'bg-discord-light text-discord-gray hover:text-white'
               }`}
-              title={muted ? 'Включить микрофон' : 'Выключить микрофон'}
+              title={muted ? t('Включить микрофон') : t('Выключить микрофон')}
             >
               {muted ? <MicOff size={20} /> : <Mic size={20} />}
             </button>
@@ -116,7 +118,7 @@ export default function VoiceChannel({ channel, server, socket, user }) {
               className={`p-3 rounded-full transition-colors ${
                 deafened ? 'bg-discord-red text-white' : 'bg-discord-light text-discord-gray hover:text-white'
               }`}
-              title={deafened ? 'Включить звук' : 'Выключить звук'}
+              title={deafened ? t('Включить звук') : t('Выключить звук')}
             >
               {deafened ? <HeadphoneOff size={20} /> : <Headphones size={20} />}
             </button>
@@ -124,7 +126,7 @@ export default function VoiceChannel({ channel, server, socket, user }) {
             <button
               onClick={leaveVoice}
               className="p-3 rounded-full bg-discord-red text-white hover:bg-red-700 transition-colors"
-              title="Покинуть голосовой канал"
+              title={t('Покинуть голосовой канал')}
             >
               <PhoneOff size={20} />
             </button>
@@ -133,14 +135,14 @@ export default function VoiceChannel({ channel, server, socket, user }) {
       ) : (
         <div className="text-center">
           <Volume2 size={64} className="text-discord-muted mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">Голосовой канал</h3>
+          <h3 className="text-xl font-bold text-white mb-2">{t('Голосовой канал')}</h3>
           <p className="text-discord-gray mb-6">{channel.name}</p>
           <button
             onClick={joinVoice}
             className="px-6 py-3 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2 mx-auto"
           >
             <Phone size={20} />
-            Присоединиться
+            {t('Присоединиться')}
           </button>
         </div>
       )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -10,6 +11,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ export default function RegisterPage() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-discord-green to-emerald-400 flex items-center justify-center shadow-2xl shadow-discord-green/30">
             <span className="text-3xl">🚀</span>
           </div>
-          <h1 className="text-2xl font-bold text-discord-white mb-1">Создать аккаунт</h1>
+          <h1 className="text-2xl font-bold text-discord-white mb-1">{t('Создать аккаунт')}</h1>
         </div>
 
         {error && (
@@ -46,7 +48,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">
-              Имя пользователя
+              {t('Имя пользователя')}
             </label>
             <input
               type="text"
@@ -59,7 +61,7 @@ export default function RegisterPage() {
 
           <div className="mb-4">
             <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">
-              Email
+              {t('Электронная почта')}
             </label>
             <input
               type="email"
@@ -72,7 +74,7 @@ export default function RegisterPage() {
 
           <div className="mb-6">
             <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">
-              Пароль
+              {t('Пароль')}
             </label>
             <input
               type="password"
@@ -89,14 +91,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white font-medium py-3 rounded-xl transition-all duration-200 disabled:opacity-50"
           >
-            {loading ? 'Продолжаем...' : 'Продолжить'}
+            {loading ? t('Продолжаем...') : t('Продолжить')}
           </button>
         </form>
 
         <p className="text-sm text-discord-muted mt-4 text-center">
-          Уже есть аккаунт?{' '}
+          {t('Уже есть аккаунт?')}{' '}
           <Link to="/login" className="text-discord-accent hover:underline font-medium">
-            Войти
+            {t('Войти')}
           </Link>
         </p>
       </div>

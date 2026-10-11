@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { X, LogOut, Shield, Eye, MessageCircle, UserPlus, Lock, Sparkles } from 'lucide-react';
+import { X, LogOut, Shield, Eye, MessageCircle, UserPlus, Lock, Sparkles, Globe, Palette } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import GenerateTab from './GenerateTab';
+import { useI18n } from '../i18n/I18nContext';
+import { useUISettings, LAYOUTS } from '../contexts/UISettingsContext';
 
 export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
   const { updateUser, logout } = useAuth();
+  const { t, lang, setLang, languages } = useI18n();
+  const { layout, setLayout } = useUISettings();
   const [username, setUsername] = useState(user?.username || '');
   const [tag, setTag] = useState(user?.tag || '');
   const [status, setStatus] = useState(user?.status || 'online');
@@ -45,7 +49,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setError(data.error || 'Ошибка');
+        setError(data.error || t('Ошибка'));
       }
     } catch (err) {
       setError(err.message);
@@ -55,9 +59,9 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
 
   const handlePasswordChange = async () => {
     setError('');
-    if (!currentPassword || !newPassword) return setError('Заполните оба поля');
-    if (newPassword !== confirmPassword) return setError('Пароли не совпадают');
-    if (newPassword.length < 6) return setError('Пароль минимум 6 символов');
+    if (!currentPassword || !newPassword) return setError(t('Заполните оба поля'));
+    if (newPassword !== confirmPassword) return setError(t('Пароли не совпадают'));
+    if (newPassword.length < 6) return setError(t('Пароль минимум 6 символов'));
     setLoading(true);
     try {
       const res = await fetch('/api/auth/me', {
@@ -76,7 +80,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setError(data.error || 'Ошибка');
+        setError(data.error || t('Ошибка'));
       }
     } catch (err) { setError(err.message); }
     setLoading(false);
@@ -93,7 +97,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
         <div className="flex h-full rounded-2xl overflow-hidden">
           {/* Sidebar */}
           <div className="w-44 bg-discord-darker p-4 flex flex-col gap-1 flex-shrink-0 border-r border-discord-light/20">
-            <h3 className="text-[11px] font-bold text-discord-accent uppercase tracking-wider px-2 mb-2">Мой аккаунт</h3>
+            <h3 className="text-[11px] font-bold text-discord-accent uppercase tracking-wider px-2 mb-2">{t('Мой аккаунт')}</h3>
             <button
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 text-left ${
@@ -101,7 +105,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
               }`}
             >
               <Eye size={16} />
-              Профиль
+              {t('Профиль')}
             </button>
             <button
               onClick={() => setActiveTab('security')}
@@ -110,7 +114,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
               }`}
             >
               <Shield size={16} />
-              Безопасность
+              {t('Безопасность')}
             </button>
             <button
               onClick={() => setActiveTab('generate')}
@@ -119,7 +123,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
               }`}
             >
               <Sparkles size={16} />
-              Генерация
+              {t('Генерация')}
             </button>
             <button
               onClick={() => setActiveTab('secret')}
@@ -127,7 +131,25 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                 activeTab === 'secret' ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30' : 'text-discord-gray hover:text-discord-text hover:bg-discord-light/30'
               }`}
             >
-              🔑 Секретный код
+              {t('🔑 Секретный код')}
+            </button>
+            <button
+              onClick={() => setActiveTab('language')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 text-left ${
+                activeTab === 'language' ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30' : 'text-discord-gray hover:text-discord-text hover:bg-discord-light/30'
+              }`}
+            >
+              <Globe size={16} />
+              {t('Язык')}
+            </button>
+            <button
+              onClick={() => setActiveTab('appearance')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 text-left ${
+                activeTab === 'appearance' ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30' : 'text-discord-gray hover:text-discord-text hover:bg-discord-light/30'
+              }`}
+            >
+              <Palette size={16} />
+              {t('Оформление')}
             </button>
           </div>
 
@@ -148,10 +170,10 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
 
             {activeTab === 'profile' && (
               <div>
-                <h2 className="text-xl font-bold text-discord-white mb-6">Настройки пользователя</h2>
+                <h2 className="text-xl font-bold text-discord-white mb-6">{t('Настройки пользователя')}</h2>
 
                 <div className="mb-4">
-                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">Тег пользователя</label>
+                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Тег пользователя')}</label>
                   <div className="flex items-center gap-2">
                     <span className="text-discord-accent text-sm font-bold">#</span>
                     <input
@@ -163,11 +185,11 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                       className="flex-1 bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 font-mono transition-colors"
                     />
                   </div>
-                  <p className="text-xs text-discord-muted mt-1">4 символа: a-z, 0-9. Друзья добавляют вас по этому тегу.</p>
+                  <p className="text-xs text-discord-muted mt-1">{t('4 символа: a-z, 0-9. Друзья добавляют вас по этому тегу.')}</p>
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">Имя пользователя</label>
+                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Имя пользователя')}</label>
                   <input
                     type="text"
                     value={username}
@@ -177,13 +199,13 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                 </div>
 
                 <div className="mb-4 p-3 bg-discord-dark rounded-xl border border-discord-light/20">
-                  <p className="text-[11px] text-discord-muted mb-2 uppercase tracking-wider font-bold">Предпросмотр:</p>
+                  <p className="text-[11px] text-discord-muted mb-2 uppercase tracking-wider font-bold">{t('Предпросмотр:')}</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style={user?.profile_border ? { border: `3px solid ${user.profile_border}`, boxShadow: `0 0 10px ${user.profile_border}40` } : { border: '3px solid #5865F2' }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style={user?.profile_border ? { border: `3px solid ${user.profile_border}`, boxShadow: `0 0 10px ${user.profile_border}40` } : { border: '3px solid #2f80ed' }}>
                       {user?.avatar ? (
                         <img src={user.avatar} alt="" className="w-full h-full rounded-full object-cover" />
                       ) : (
-                        <div className="w-full h-full rounded-full flex items-center justify-center" style={user?.profile_theme ? { background: user.profile_theme } : { background: 'linear-gradient(135deg, #6c5ce7, #a855f7)' }}>
+                        <div className="w-full h-full rounded-full flex items-center justify-center" style={user?.profile_theme ? { background: user.profile_theme } : { background: 'linear-gradient(135deg, #3b82f6, #22d3ee)' }}>
                           {(username || user?.username || 'U')[0].toUpperCase()}
                         </div>
                       )}
@@ -193,42 +215,42 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                         {username || 'Username'}
                         <span className="text-discord-muted font-normal text-xs ml-1">#{tag || '????'}</span>
                       </p>
-                      <p className="text-xs text-discord-muted">Кастомизации из магазина</p>
+                      <p className="text-xs text-discord-muted">{t('Кастомизации из магазина')}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">Статус</label>
+                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Статус')}</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors"
                   >
-                    <option value="online">В сети</option>
-                    <option value="idle">Не активен</option>
-                    <option value="dnd">Не беспокоить</option>
-                    <option value="offline">Невидимый</option>
+                    <option value="online">{t('В сети')}</option>
+                    <option value="idle">{t('Не активен')}</option>
+                    <option value="dnd">{t('Не беспокоить')}</option>
+                    <option value="offline">{t('Невидимый')}</option>
                   </select>
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">Пользовательский статус</label>
+                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Пользовательский статус')}</label>
                   <input
                     type="text"
                     value={customStatus}
                     onChange={(e) => setCustomStatus(e.target.value)}
-                    placeholder="Чем занимаетесь?"
+                    placeholder={t('Чем занимаетесь?')}
                     className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors placeholder-discord-muted"
                   />
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">О себе</label>
+                  <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">{t('О себе')}</label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Расскажите о себе..."
+                    placeholder={t('Расскажите о себе...')}
                     maxLength={200}
                     rows={3}
                     className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text focus:outline-none focus:border-discord-accent/50 transition-colors placeholder-discord-muted resize-none"
@@ -242,18 +264,18 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                     className="flex items-center gap-2 px-4 py-2 bg-discord-red/20 hover:bg-discord-red/30 text-discord-red text-sm font-medium rounded-xl transition-all duration-200 border border-discord-red/30"
                   >
                     <LogOut size={16} />
-                    Выйти
+                    {t('Выйти')}
                   </button>
                   <div className="flex gap-3">
                     <button onClick={onClose} className="px-4 py-2 text-sm text-discord-gray hover:text-discord-white transition-colors">
-                      Отмена
+                      {t('Отмена')}
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={loading}
                       className="px-6 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white text-sm font-medium rounded-xl transition-all duration-200 disabled:opacity-50"
                     >
-                      {saved ? '✓ Сохранено!' : loading ? 'Сохранение...' : 'Сохранить'}
+                      {saved ? t('✓ Сохранено!') : loading ? t('Сохранение...') : t('Сохранить')}
                     </button>
                   </div>
                 </div>
@@ -262,7 +284,7 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
 
             {activeTab === 'security' && (
               <div>
-                <h2 className="text-xl font-bold text-discord-white mb-6">Безопасность и конфиденциальность</h2>
+                <h2 className="text-xl font-bold text-discord-white mb-6">{t('Безопасность и конфиденциальность')}</h2>
 
                 <div className="space-y-3 mb-8">
                   <div className="bg-discord-dark rounded-xl p-4 border border-discord-light/20">
@@ -270,8 +292,8 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                       <div className="flex items-center gap-3">
                         <MessageCircle size={18} className="text-discord-accent" />
                         <div>
-                          <p className="text-sm font-medium text-discord-white">Личные сообщения</p>
-                          <p className="text-xs text-discord-muted mt-0.5">Разрешить ЛС от участников серверов</p>
+                          <p className="text-sm font-medium text-discord-white">{t('Личные сообщения')}</p>
+                          <p className="text-xs text-discord-muted mt-0.5">{t('Разрешить ЛС от участников серверов')}</p>
                         </div>
                       </div>
                       <button
@@ -288,8 +310,8 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                       <div className="flex items-center gap-3">
                         <Eye size={18} className="text-discord-accent" />
                         <div>
-                          <p className="text-sm font-medium text-discord-white">Показывать статус</p>
-                          <p className="text-xs text-discord-muted mt-0.5">Другие видят ваш статус онлайн</p>
+                          <p className="text-sm font-medium text-discord-white">{t('Показывать статус')}</p>
+                          <p className="text-xs text-discord-muted mt-0.5">{t('Другие видят ваш статус онлайн')}</p>
                         </div>
                       </div>
                       <button
@@ -306,8 +328,8 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                       <div className="flex items-center gap-3">
                         <UserPlus size={18} className="text-discord-accent" />
                         <div>
-                          <p className="text-sm font-medium text-discord-white">Заявки в друзья</p>
-                          <p className="text-xs text-discord-muted mt-0.5">Разрешить отправку заявок в друзья</p>
+                          <p className="text-sm font-medium text-discord-white">{t('Заявки в друзья')}</p>
+                          <p className="text-xs text-discord-muted mt-0.5">{t('Разрешить отправку заявок в друзья')}</p>
                         </div>
                       </div>
                       <button
@@ -324,8 +346,8 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                       <div className="flex items-center gap-3">
                         <Shield size={18} className="text-discord-accent" />
                         <div>
-                          <p className="text-sm font-medium text-discord-white">Двухфакторная аутентификация</p>
-                          <p className="text-xs text-discord-muted mt-0.5">Дополнительная защита аккаунта</p>
+                          <p className="text-sm font-medium text-discord-white">{t('Двухфакторная аутентификация')}</p>
+                          <p className="text-xs text-discord-muted mt-0.5">{t('Дополнительная защита аккаунта')}</p>
                         </div>
                       </div>
                       <button
@@ -341,28 +363,28 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                 {/* Password change */}
                 <h3 className="text-sm font-bold text-discord-white uppercase mb-4 flex items-center gap-2">
                   <Lock size={16} className="text-discord-accent" />
-                  Смена пароля
+                  {t('Смена пароля')}
                 </h3>
                 <div className="space-y-3 mb-6">
                   <input
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Текущий пароль"
+                    placeholder={t('Текущий пароль')}
                     className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text placeholder-discord-muted focus:outline-none focus:border-discord-accent/50 transition-colors"
                   />
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Новый пароль"
+                    placeholder={t('Новый пароль')}
                     className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text placeholder-discord-muted focus:outline-none focus:border-discord-accent/50 transition-colors"
                   />
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Подтвердите пароль"
+                    placeholder={t('Подтвердите пароль')}
                     className="w-full bg-discord-dark border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text placeholder-discord-muted focus:outline-none focus:border-discord-accent/50 transition-colors"
                   />
                   <button
@@ -370,20 +392,20 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
                     disabled={loading}
                     className="px-4 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white text-sm font-medium rounded-xl transition-all duration-200 disabled:opacity-50"
                   >
-                    {loading ? 'Сохранение...' : 'Сменить пароль'}
+                    {loading ? t('Сохранение...') : t('Сменить пароль')}
                   </button>
                 </div>
 
                 <div className="flex justify-end gap-3">
                   <button onClick={onClose} className="px-4 py-2 text-sm text-discord-gray hover:text-discord-white transition-colors">
-                    Отмена
+                    {t('Отмена')}
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={loading}
                     className="px-6 py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white text-sm font-medium rounded-xl transition-all duration-200 disabled:opacity-50"
                   >
-                    {saved ? '✓ Сохранено!' : loading ? 'Сохранение...' : 'Сохранить'}
+                    {saved ? t('✓ Сохранено!') : loading ? t('Сохранение...') : t('Сохранить')}
                   </button>
                 </div>
               </div>
@@ -391,14 +413,68 @@ export default function SettingsModal({ user, onClose, onCasinoUnlock }) {
 
             {activeTab === 'generate' && (
               <div>
-                <h2 className="text-xl font-bold text-discord-white mb-6">AI Генерация изображений</h2>
-                <p className="text-xs text-discord-muted mb-4">Требуется запущенный Python-сервис Stable Diffusion на порту 8000</p>
+                <h2 className="text-xl font-bold text-discord-white mb-6">{t('AI Генерация изображений')}</h2>
+                <p className="text-xs text-discord-muted mb-4">{t('Требуется запущенный Python-сервис Stable Diffusion на порту 8000')}</p>
                 <GenerateTab user={user} />
               </div>
             )}
 
             {activeTab === 'secret' && (
               <SecretCodeTab user={user} onCasinoUnlock={onCasinoUnlock} />
+            )}
+
+            {activeTab === 'language' && (
+              <div>
+                <h2 className="text-xl font-bold text-discord-white mb-2">{t('Язык интерфейса')}</h2>
+                <p className="text-sm text-discord-gray mb-6">{t('Выберите язык интерфейса')}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {languages.map((l) => (
+                    <button
+                      key={l.code}
+                      onClick={() => setLang(l.code)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors border ${
+                        lang === l.code
+                          ? 'bg-discord-accent/20 text-discord-accent border-discord-accent/30'
+                          : 'bg-discord-dark hover:bg-discord-light/20 text-discord-gray border-discord-light/20'
+                      }`}
+                    >
+                      <span className="text-lg">{l.flag}</span>
+                      <span className="truncate">{l.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-discord-muted text-xs mt-4">
+                  {t('Текущий язык')}: {languages.find((l) => l.code === lang)?.label}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'appearance' && (
+              <div>
+                <h2 className="text-xl font-bold text-discord-white mb-2">{t('Оформление')}</h2>
+                <p className="text-sm text-discord-gray mb-6">{t('Выберите раскладку интерфейса')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {LAYOUTS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setLayout(opt.id)}
+                      className={`text-left p-4 rounded-xl border transition-colors ${
+                        layout === opt.id
+                          ? 'bg-discord-accent/20 border-discord-accent/40'
+                          : 'bg-discord-dark hover:bg-discord-light/20 border-discord-light/20'
+                      }`}
+                    >
+                      <div className={`text-sm font-semibold mb-1 ${layout === opt.id ? 'text-discord-accent' : 'text-discord-white'}`}>
+                        {opt.label}
+                      </div>
+                      <div className="text-xs text-discord-gray">{t(opt.desc)}</div>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-discord-muted text-xs mt-4">
+                  {t('Активная раскладка')}: {LAYOUTS.find((l) => l.id === layout)?.label}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -413,6 +489,7 @@ function SecretCodeTab({ user, onCasinoUnlock }) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [casinoStatus, setCasinoStatus] = useState(null);
+  const { t } = useI18n();
 
   React.useEffect(() => {
     fetch('/api/auth/casino-status', {
@@ -438,7 +515,7 @@ function SecretCodeTab({ user, onCasinoUnlock }) {
         setCasinoStatus({ unlocked: true });
         if (onCasinoUnlock) onCasinoUnlock();
       } else {
-        setError(data.error || 'Ошибка');
+        setError(data.error || t('Ошибка'));
       }
     } catch (err) {
       setError(err.message);
@@ -448,15 +525,15 @@ function SecretCodeTab({ user, onCasinoUnlock }) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-discord-white mb-6">Секретный код</h2>
+      <h2 className="text-xl font-bold text-discord-white mb-6">{t('Секретный код')}</h2>
 
       <div className="mb-6">
         <div className="bg-discord-dark/50 border border-discord-light/20 rounded-2xl p-5 mb-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-discord-yellow to-orange-500 flex items-center justify-center text-lg">🔑</div>
             <div>
-              <h3 className="text-sm font-bold text-discord-white">Ввести код</h3>
-              <p className="text-[11px] text-discord-muted">Введите код</p>
+              <h3 className="text-sm font-bold text-discord-white">{t('Ввести код')}</h3>
+              <p className="text-[11px] text-discord-muted">{t('Введите код')}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -465,7 +542,7 @@ function SecretCodeTab({ user, onCasinoUnlock }) {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
-              placeholder="Введите код..."
+              placeholder={t('Введите код...')}
               className="flex-1 bg-discord-mid border border-discord-light/20 rounded-xl px-4 py-2.5 text-discord-text text-sm focus:outline-none focus:border-discord-accent/50 transition-colors"
             />
             <button
@@ -473,7 +550,7 @@ function SecretCodeTab({ user, onCasinoUnlock }) {
               disabled={loading || !code.trim()}
               className="px-5 py-2.5 bg-gradient-to-r from-discord-blurple to-discord-accent hover:shadow-lg hover:shadow-discord-accent/30 text-white text-sm font-medium rounded-xl transition-all duration-200 disabled:opacity-50"
             >
-              {loading ? '...' : 'Активировать'}
+              {loading ? '...' : t('Активировать')}
             </button>
           </div>
         </div>
@@ -492,11 +569,11 @@ function SecretCodeTab({ user, onCasinoUnlock }) {
 
       {casinoStatus && (
         <div className="bg-discord-dark/50 border border-discord-light/20 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-discord-white mb-3">Статус</h3>
+          <h3 className="text-sm font-bold text-discord-white mb-3">{t('Статус')}</h3>
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${casinoStatus.unlocked ? 'bg-discord-green' : 'bg-discord-red'}`} />
             <span className="text-sm text-discord-text">
-              {casinoStatus.unlocked ? '🎰 Казино разблокировано!' : 'Казино заблокировано'}
+              {casinoStatus.unlocked ? t('🎰 Казино разблокировано!') : t('Казино заблокировано')}
             </span>
           </div>
         </div>

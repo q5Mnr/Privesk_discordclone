@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t, lang, setLang, languages } = useI18n();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,13 +30,24 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-discord-darker via-discord-dark to-discord-mid flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-discord-blurple/20 via-transparent to-transparent" />
+      <div className="absolute top-4 right-4 z-10">
+        <select
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
+          className="bg-discord-mid/80 backdrop-blur text-discord-text text-sm rounded-lg px-3 py-2 border border-discord-light/20 focus:outline-none focus:border-discord-accent/50"
+        >
+          {languages.map((l) => (
+            <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
+          ))}
+        </select>
+      </div>
       <div className="relative bg-discord-mid/80 backdrop-blur-xl rounded-2xl p-8 w-full max-w-md shadow-2xl border border-discord-light/20">
         <div className="text-center mb-6">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-discord-blurple to-discord-gradient2 flex items-center justify-center shadow-2xl shadow-discord-blurple/30">
             <span className="text-3xl">💬</span>
           </div>
-          <h1 className="text-2xl font-bold text-discord-white mb-1">С возвращением!</h1>
-          <p className="text-discord-gray text-sm">Мы рады видеть вас снова!</p>
+          <h1 className="text-2xl font-bold text-discord-white mb-1">{t('С возвращением!')}</h1>
+          <p className="text-discord-gray text-sm">{t('Мы рады видеть вас снова!')}</p>
         </div>
 
         {error && (
@@ -46,7 +59,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">
-              Email
+              {t('Электронная почта')}
             </label>
             <input
               type="email"
@@ -59,7 +72,7 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <label className="block text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">
-              Пароль
+              {t('Пароль')}
             </label>
             <input
               type="password"
@@ -75,14 +88,14 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white font-medium py-3 rounded-xl transition-all duration-200 disabled:opacity-50"
           >
-            {loading ? 'Вход...' : 'Войти'}
+            {loading ? t('Вход...') : t('Войти')}
           </button>
         </form>
 
         <p className="text-sm text-discord-muted mt-4 text-center">
-          Нужна учётная запись?{' '}
+          {t('Нужна учётная запись?')}{' '}
           <Link to="/register" className="text-discord-accent hover:underline font-medium">
-            Зарегистрироваться
+            {t('Зарегистрироваться')}
           </Link>
         </p>
       </div>

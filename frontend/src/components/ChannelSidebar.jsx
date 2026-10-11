@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Hash, Volume2, ChevronDown, ChevronRight, UserPlus, RefreshCw, Copy, Check, Settings, Calendar, MessageSquare, Zap } from 'lucide-react';
 import { hasChannelDraft, getDraftPreview } from '../utils/drafts';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function ChannelSidebar({ server, channels, currentChannel, onSelectChannel, user, onOpenServerSettings, getChannelUnread, getChannelMention, onOpenEvents, onOpenBoosts }) {
   const [collapsedCategories, setCollapsedCategories] = useState({});
@@ -9,6 +10,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [, draftTick] = useState(0);
+  const { t } = useI18n();
 
   useEffect(() => {
     const refresh = () => draftTick((n) => n + 1);
@@ -48,13 +50,13 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
   };
 
   return (
-    <div className="w-60 bg-discord-darker flex flex-col flex-shrink-0 border-r border-discord-light/30">
+    <div className="w-60 bg-discord-darker flex flex-col flex-shrink-0 border border-discord-light/20 rounded-2xl overflow-hidden">
       <div className="h-14 px-4 flex items-center border-b border-discord-light/20 shadow-sm hover:bg-discord-light/20 transition-all duration-200 group">
         <h2 className="text-discord-white font-semibold text-[15px] truncate flex-1">{server.name}</h2>
         <button
           onClick={(e) => { e.stopPropagation(); onOpenServerSettings?.(); }}
           className="p-1 text-discord-gray hover:text-discord-accent transition-colors opacity-0 group-hover:opacity-100"
-          title="Настройки сервера"
+          title={t('Настройки сервера')}
         >
           <Settings size={16} />
         </button>
@@ -68,7 +70,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
               className="flex items-center gap-0.5 text-[11px] font-bold text-discord-muted uppercase tracking-wider px-2 mb-1 hover:text-discord-accent transition-colors w-full"
             >
               {collapsedCategories.text ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-              Текстовые каналы
+              {t('Текстовые каналы')}
             </button>
 
             {!collapsedCategories.text && textChannels.map(channel => {
@@ -94,7 +96,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
                   <Hash size={18} className={mentions > 0 ? 'text-discord-accent' : 'text-discord-muted'} />
                   {draft ? (
                     <span className="truncate flex-1 text-left">
-                      <span className="text-discord-muted text-xs">Черновик: </span>
+                      <span className="text-discord-muted text-xs">{t('Черновик:')} </span>
                       <span className="text-discord-gray italic">{getDraftPreview(channel.id)}</span>
                     </span>
                   ) : (
@@ -123,7 +125,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
               className="flex items-center gap-0.5 text-[11px] font-bold text-discord-muted uppercase tracking-wider px-2 mb-1 hover:text-discord-accent transition-colors w-full"
             >
               {collapsedCategories.forum ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-              Форумы
+              {t('Форумы')}
             </button>
 
             {!collapsedCategories.forum && forumChannels.map(channel => {
@@ -168,7 +170,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
               className="flex items-center gap-0.5 text-[11px] font-bold text-discord-muted uppercase tracking-wider px-2 mb-1 hover:text-discord-accent transition-colors w-full"
             >
               {collapsedCategories.voice ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-              Голосовые каналы
+              {t('Голосовые каналы')}
             </button>
 
             {!collapsedCategories.voice && voiceChannels.map(channel => (
@@ -194,7 +196,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
             className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-sm text-discord-gray hover:bg-discord-light/30 hover:text-discord-accent transition-all duration-200"
           >
             <Calendar size={18} className="text-discord-muted" />
-            <span className="truncate">События</span>
+            <span className="truncate">{t('События')}</span>
           </button>
         </div>
       </div>
@@ -202,10 +204,10 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
       <div className="border-t border-discord-light/20">
         <button
           onClick={() => onOpenBoosts?.()}
-          className="w-full flex items-center gap-2 px-4 py-3 text-discord-gray hover:bg-purple-500/10 hover:text-purple-400 transition-all duration-200"
+          className="w-full flex items-center gap-2 px-4 py-3 text-discord-gray hover:bg-sky-500/10 hover:text-sky-400 transition-all duration-200"
         >
           <Zap size={18} />
-          <span className="text-sm font-medium">Буст сервера</span>
+          <span className="text-sm font-medium">{t('Буст сервера')}</span>
         </button>
 
         <button
@@ -213,13 +215,13 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
           className="w-full flex items-center gap-2 px-4 py-3 text-discord-gray hover:bg-discord-light/20 hover:text-discord-accent transition-all duration-200"
         >
           <UserPlus size={18} />
-          <span className="text-sm font-medium">Пригласить людей</span>
+          <span className="text-sm font-medium">{t('Пригласить людей')}</span>
         </button>
 
         {showInvite && (
           <div className="px-4 pb-3">
             <div className="bg-discord-mid rounded-xl p-3 border border-discord-light/20">
-              <p className="text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">Код приглашения</p>
+              <p className="text-[11px] font-bold text-discord-accent uppercase tracking-wider mb-2">{t('Код приглашения')}</p>
 
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex-1 bg-discord-dark rounded-xl px-3 py-2 font-mono text-discord-white text-sm tracking-wider border border-discord-light/20">
@@ -228,7 +230,7 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
                 <button
                   onClick={handleCopy}
                   className="p-2 rounded-xl bg-gradient-to-br from-discord-blurple to-discord-gradient2 hover:shadow-lg hover:shadow-discord-blurple/30 text-white transition-all duration-200 flex-shrink-0"
-                  title="Скопировать"
+                  title={t('Скопировать')}
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
@@ -241,12 +243,12 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
                   className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs text-discord-gray hover:text-discord-accent hover:bg-discord-light/20 transition-all duration-200"
                 >
                   <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} />
-                  {regenerating ? 'Генерация...' : 'Сгенерировать новый код'}
+                  {regenerating ? t('Генерация...') : t('Сгенерировать новый код')}
                 </button>
               )}
 
               <p className="text-[10px] text-discord-muted mt-2 text-center">
-                Отправьте этот код человеку, чтобы он присоединился
+                {t('Отправьте этот код человеку, чтобы он присоединился')}
               </p>
             </div>
           </div>

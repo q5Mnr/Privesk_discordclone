@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Compass, Users, Hash, ArrowLeft, Search, TrendingUp } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function ExplorePage({ onJoinServer, onBack }) {
+  const { t } = useI18n();
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -38,14 +40,14 @@ export default function ExplorePage({ onJoinServer, onBack }) {
   const restServers = filtered.slice(6);
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-discord-mid">
       {/* Header */}
       <div className="h-16 px-6 flex items-center border-b border-discord-light/20 bg-discord-mid/80 backdrop-blur-xl sticky top-0 z-10">
         <button onClick={onBack} className="p-2 rounded-xl text-discord-muted hover:text-discord-white hover:bg-discord-light/30 transition-all mr-3">
           <ArrowLeft size={20} />
         </button>
         <Compass size={20} className="text-discord-accent mr-2" />
-        <h2 className="text-discord-white font-bold">Explore Servers</h2>
+        <h2 className="text-discord-white font-bold">{t('Обзор серверов')}</h2>
         <div className="flex-1" />
         <div className="relative max-w-md w-full">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-discord-muted" />
@@ -53,7 +55,7 @@ export default function ExplorePage({ onJoinServer, onBack }) {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search servers..."
+            placeholder={t('Поиск серверов...')}
             className="w-full bg-discord-dark border border-discord-light/20 rounded-xl pl-10 pr-4 py-2 text-sm text-discord-text placeholder-discord-muted focus:outline-none focus:border-discord-accent/50 transition-colors"
           />
         </div>
@@ -63,13 +65,13 @@ export default function ExplorePage({ onJoinServer, onBack }) {
         {loading ? (
           <div className="text-center py-16">
             <div className="w-12 h-12 border-2 border-discord-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-discord-muted">Loading servers...</p>
+            <p className="text-discord-muted">{t('Загрузка серверов...')}</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <Compass size={48} className="mx-auto mb-4 text-discord-muted opacity-50" />
-            <h3 className="text-xl font-bold text-discord-white mb-2">No servers found</h3>
-            <p className="text-discord-muted">{search ? 'Try a different search' : 'No public servers yet'}</p>
+            <h3 className="text-xl font-bold text-discord-white mb-2">{t('Серверы не найдены')}</h3>
+            <p className="text-discord-muted">{search ? t('Попробуйте другой запрос') : t('Публичных серверов пока нет')}</p>
           </div>
         ) : (
           <>
@@ -78,7 +80,7 @@ export default function ExplorePage({ onJoinServer, onBack }) {
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp size={18} className="text-discord-accent" />
-                  <h3 className="text-lg font-bold text-discord-white">Featured</h3>
+                  <h3 className="text-lg font-bold text-discord-white">{t('Рекомендуемые')}</h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {topServers.map(server => (
@@ -91,7 +93,7 @@ export default function ExplorePage({ onJoinServer, onBack }) {
             {/* All servers */}
             {restServers.length > 0 && (
               <div>
-                <h3 className="text-lg font-bold text-discord-white mb-4">All Servers</h3>
+                <h3 className="text-lg font-bold text-discord-white mb-4">{t('Все серверы')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {restServers.map(server => (
                     <ServerCard key={server.id} server={server} onJoin={handleJoin} joining={joining} />
@@ -107,6 +109,7 @@ export default function ExplorePage({ onJoinServer, onBack }) {
 }
 
 function ServerCard({ server, onJoin, joining }) {
+  const { t } = useI18n();
   return (
     <div className="bg-discord-dark border border-discord-light/20 rounded-2xl p-5 hover:border-discord-accent/30 hover:shadow-lg hover:shadow-discord-accent/10 transition-all duration-300 group">
       <div className="flex items-center gap-3 mb-3">
@@ -122,7 +125,7 @@ function ServerCard({ server, onJoin, joining }) {
           <div className="flex items-center gap-2 text-xs text-discord-muted">
             <span className="flex items-center gap-1"><Users size={11} /> {server.member_count || 0}</span>
             <span>•</span>
-            <span className="flex items-center gap-1"><Hash size={11} /> {server.channel_count || 0} channels</span>
+            <span className="flex items-center gap-1"><Hash size={11} /> {t('{n} каналов', { n: server.channel_count || 0 })}</span>
           </div>
         </div>
       </div>
@@ -134,7 +137,7 @@ function ServerCard({ server, onJoin, joining }) {
         disabled={joining === server.invite_code}
         className="w-full py-2 bg-gradient-to-r from-discord-blurple to-discord-gradient2 hover:opacity-90 text-white text-sm font-medium rounded-xl transition-all shadow-lg disabled:opacity-50"
       >
-        {joining === server.invite_code ? 'Joining...' : 'Join Server'}
+        {joining === server.invite_code ? t('Присоединение...') : t('Присоединиться')}
       </button>
     </div>
   );

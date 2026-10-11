@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, ArrowLeft, AtSign, Calendar, Clock, MessageCircle } from 'lucide-react';
 import { apiGet } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
+  const { t } = useI18n();
   const [notifications, setNotifications] = useState({ mentions: [], events: [] });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('mentions');
@@ -25,10 +27,10 @@ export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
     const diffMin = Math.floor(diffMs / 60000);
     const diffHr = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHr / 24);
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHr < 24) return `${diffHr}h ago`;
-    return `${diffDay}d ago`;
+    if (diffMin < 1) return t('только что');
+    if (diffMin < 60) return t('{n}м назад', { n: diffMin });
+    if (diffHr < 24) return t('{n}ч назад', { n: diffHr });
+    return t('{n}д назад', { n: diffDay });
   };
 
   const formatEventTime = (dt) => {
@@ -40,14 +42,14 @@ export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
   const unreadMentions = notifications.mentions.filter(m => !m.read).length;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-discord-mid">
       {/* Header */}
       <div className="h-16 px-6 flex items-center border-b border-discord-light/20 bg-discord-mid/80 backdrop-blur-xl sticky top-0 z-10">
         <button onClick={onBack} className="p-2 rounded-xl text-discord-muted hover:text-discord-white hover:bg-discord-light/30 transition-all mr-3">
           <ArrowLeft size={20} />
         </button>
         <Bell size={20} className="text-discord-accent mr-2" />
-        <h2 className="text-discord-white font-bold">Notifications</h2>
+        <h2 className="text-discord-white font-bold">{t('Уведомления')}</h2>
         {unreadMentions > 0 && (
           <span className="ml-2 px-2 py-0.5 bg-discord-red text-white text-[10px] font-bold rounded-full">
             {unreadMentions}
@@ -59,13 +61,13 @@ export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
             onClick={() => setTab('mentions')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${tab === 'mentions' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white'}`}
           >
-            <AtSign size={12} className="inline mr-1" />Mentions
+            <AtSign size={12} className="inline mr-1" />{t('Упоминания')}
           </button>
           <button
             onClick={() => setTab('events')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${tab === 'events' ? 'bg-gradient-to-r from-discord-blurple to-discord-gradient2 text-white shadow-lg' : 'text-discord-muted hover:text-discord-white'}`}
           >
-            <Calendar size={12} className="inline mr-1" />Events
+            <Calendar size={12} className="inline mr-1" />{t('События')}
           </button>
         </div>
       </div>
@@ -74,14 +76,14 @@ export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
         {loading ? (
           <div className="text-center py-16">
             <div className="w-12 h-12 border-2 border-discord-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-discord-muted">Loading notifications...</p>
+            <p className="text-discord-muted">{t('Загрузка уведомлений...')}</p>
           </div>
         ) : tab === 'mentions' ? (
           notifications.mentions.length === 0 ? (
             <div className="text-center py-16">
               <AtSign size={48} className="mx-auto mb-4 text-discord-muted opacity-50" />
-              <h3 className="text-lg font-bold text-discord-white mb-2">No mentions</h3>
-              <p className="text-discord-muted text-sm">When someone mentions you, it will appear here</p>
+              <h3 className="text-lg font-bold text-discord-white mb-2">{t('Упоминаний нет')}</h3>
+              <p className="text-discord-muted text-sm">{t('Когда кто-то упомянет вас, это появится здесь')}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -110,7 +112,7 @@ export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[11px] text-discord-muted flex items-center gap-1">
                           <span className="text-discord-accent font-medium">#{m.channel_name}</span>
-                          in {m.server_name}
+                          {t('в {server}', { server: m.server_name })}
                         </span>
                       </div>
                     </div>
@@ -123,8 +125,8 @@ export default function NotificationsPanel({ onBack, onNavigateToChannel }) {
           notifications.events.length === 0 ? (
             <div className="text-center py-16">
               <Calendar size={48} className="mx-auto mb-4 text-discord-muted opacity-50" />
-              <h3 className="text-lg font-bold text-discord-white mb-2">No upcoming events</h3>
-              <p className="text-discord-muted text-sm">Events from your servers will appear here</p>
+              <h3 className="text-lg font-bold text-discord-white mb-2">{t('Нет предстоящих событий')}</h3>
+              <p className="text-discord-muted text-sm">{t('События ваших серверов появятся здесь')}</p>
             </div>
           ) : (
             <div className="space-y-2">

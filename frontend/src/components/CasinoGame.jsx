@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '💎', '7️⃣', '🔔', '⭐', '🌈', '🔥', '🍕', '🎸', '🚀', '👑', '🍀', '🦄', '💰', '🎯', '🪙', '🏆'];
 const SYMBOL_HEIGHT = 112;
@@ -90,6 +91,7 @@ export default function CasinoGame({ onClose }) {
   const [stoppedCount, setStoppedCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const finalsRef = useRef(['🎰', '🎰', '🎰']);
+  const { t } = useI18n();
 
   const spin = () => {
     if (spinning) return;
@@ -134,11 +136,11 @@ export default function CasinoGame({ onClose }) {
     if (r[0] === r[1] && r[1] === r[2]) {
       setShowWin(true);
       setTimeout(() => setShowWin(false), 3000);
-      if (r[0] === '7️⃣') setMessage('🎰🎆💥 ДЖЕКПОТ!!! 💥🎆🎰');
-      else if (r[0] === '💎') setMessage('💎✨👑 БРИЛЛИАНТЫ! 👑✨💎');
-      else if (r[0] === '🦄') setMessage('🦄🌈⭐ УНИКОРН! ⭐🌈🦄');
-      else if (r[0] === '💰') setMessage('💰🪙💸 ЗОЛОТО! 💸🪙💰');
-      else setMessage('🎉🎊🏆 ТРИ В РЯД! 🏆🎊🎉');
+      if (r[0] === '7️⃣') setMessage(t('🎰🎆💥 ДЖЕКПОТ!!! 💥🎆🎰'));
+      else if (r[0] === '💎') setMessage(t('💎✨👑 БРИЛЛИАНТЫ! 👑✨💎'));
+      else if (r[0] === '🦄') setMessage(t('🦄🌈⭐ УНИКОРН! ⭐🌈🦄'));
+      else if (r[0] === '💰') setMessage(t('💰🪙💸 ЗОЛОТО! 💸🪙💰'));
+      else setMessage(t('🎉🎊🏆 ТРИ В РЯД! 🏆🎊🎉'));
       try {
         const token = localStorage.getItem('token');
         const res = await fetch('/api/auth/casino-win-count', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
@@ -148,14 +150,14 @@ export default function CasinoGame({ onClose }) {
         await fetch('/api/collection/check-achievements', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       } catch (e) { console.error('Casino win recording failed:', e); }
     } else if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) {
-      setMessage(`✨ ПОЧТИ! ✨`);
+      setMessage(t('✨ ПОЧТИ! ✨'));
       try {
         const token = localStorage.getItem('token');
         await fetch('/api/auth/casino-loss', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
         setStreak(0);
       } catch (e) {}
     } else {
-      const msgs = ['😅 Повезёт в следующий раз!', '🤔 Мимо...', '😤 Ещё разок!', '🍀 Не хватило чуточку!', '🫣 Близко!'];
+      const msgs = [t('😅 Повезёт в следующий раз!'), t('🤔 Мимо...'), t('😤 Ещё разок!'), t('🍀 Не хватило чуточку!'), t('🫣 Близко!')];
       setMessage(msgs[Math.floor(Math.random() * msgs.length)]);
       try {
         const token = localStorage.getItem('token');
@@ -190,7 +192,7 @@ export default function CasinoGame({ onClose }) {
         <div className="bg-gradient-to-r from-discord-yellow/20 via-orange-500/20 to-discord-yellow/20 px-6 py-4 flex items-center justify-between border-b border-discord-light/20">
           <div className="flex items-center gap-3">
             <span className="text-2xl animate-bounce">🎰</span>
-            <h2 className="text-lg font-bold text-discord-white">🎰 Казино 🎲</h2>
+            <h2 className="text-lg font-bold text-discord-white">{t('🎰 Казино 🎲')}</h2>
           </div>
           <button onClick={onClose} className="text-discord-gray hover:text-discord-accent transition-colors">
             <X size={24} />
@@ -226,7 +228,7 @@ export default function CasinoGame({ onClose }) {
                 streak >= 3 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
                 'bg-green-500/20 text-green-400 border border-green-500/30'
               }`}>
-                🔥 Серия: {streak} {streak >= 5 ? '— НА ВОЛНЕ!' : streak >= 3 ? '— Отлично!' : ''}
+                {t('🔥 Серия:')} {streak} {streak >= 5 ? t('— НА ВОЛНЕ!') : streak >= 3 ? t('— Отлично!') : ''}
               </span>
             </div>
           )}
@@ -243,9 +245,9 @@ export default function CasinoGame({ onClose }) {
             {spinning ? (
               <span className="flex items-center justify-center gap-2">
                 <RotateCcw size={20} className="animate-spin" />
-                🎰 Крутится... 🎰
+                {t('🎰 Крутится... 🎰')}
               </span>
-            ) : '🎰🔥 Крутить! 🔥🎰'}
+            ) : t('🎰🔥 Крутить! 🔥🎰')}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Smile, Search } from 'lucide-react';
 import { apiGet } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const STANDARD_EMOJI_CATEGORIES = {
   'Частые': ['👍', '❤️', '😂', '🎉', '🤔', '👀', '🔥', '💯', '✅', '❌', '🚀', '⭐', '😊', '😍', '🥳', '😎', '🤯', '💀', '🤡', '👽'],
@@ -35,6 +36,7 @@ export default function EmojiPicker({ onSelect, onClose, ownedEmojis = [] }) {
   const [search, setSearch] = useState('');
   const [collectionEmojis, setCollectionEmojis] = useState([]);
   const ref = useRef(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -68,7 +70,7 @@ export default function EmojiPicker({ onSelect, onClose, ownedEmojis = [] }) {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-discord-light/20">
         <Smile size={16} className="text-discord-muted" />
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Поиск эмодзи..."
+          placeholder={t('Поиск эмодзи...')}
           className="flex-1 bg-transparent text-sm text-discord-white placeholder-discord-muted outline-none" />
         {search && <button onClick={() => setSearch('')} className="text-discord-muted hover:text-discord-gray"><X size={14} /></button>}
       </div>
@@ -77,11 +79,11 @@ export default function EmojiPicker({ onSelect, onClose, ownedEmojis = [] }) {
       <div className="flex border-b border-discord-light/20">
         <button onClick={() => { setTab('standard'); setSearch(''); }}
           className={`flex-1 py-1.5 text-xs font-medium transition-all ${tab === 'standard' ? 'text-discord-white border-b-2 border-discord-accent' : 'text-discord-muted hover:text-discord-gray'}`}>
-          Стандартные
+          {t('Стандартные')}
         </button>
         <button onClick={() => { setTab('collection'); setSearch(''); }}
           className={`flex-1 py-1.5 text-xs font-medium transition-all ${tab === 'collection' ? 'text-discord-white border-b-2 border-discord-accent' : 'text-discord-muted hover:text-discord-gray'}`}>
-          Коллекция {ownedSet.size > 0 && <span className="ml-1 text-[10px] bg-discord-accent/20 text-discord-accent px-1.5 rounded-full">{ownedSet.size}</span>}
+          {t('Коллекция')} {ownedSet.size > 0 && <span className="ml-1 text-[10px] bg-discord-accent/20 text-discord-accent px-1.5 rounded-full">{ownedSet.size}</span>}
         </button>
       </div>
 
@@ -91,7 +93,7 @@ export default function EmojiPicker({ onSelect, onClose, ownedEmojis = [] }) {
           {Object.keys(STANDARD_EMOJI_CATEGORIES).map(c => (
             <button key={c} onClick={() => setCategory(c)}
               className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${category === c ? 'bg-discord-accent/20 text-discord-accent border border-discord-accent/30' : 'text-discord-muted hover:text-discord-gray hover:bg-discord-light/10'}`}>
-              {c}
+              {t(c)}
             </button>
           ))}
         </div>
@@ -116,7 +118,7 @@ export default function EmojiPicker({ onSelect, onClose, ownedEmojis = [] }) {
               const owned = ownedSet.has(id);
               return (
                 <button key={id} onClick={() => owned && handleSelect(emoji)}
-                  title={owned ? COLLECTION_NAMES[id] || id : 'Не разблокировано'}
+                  title={owned ? t(COLLECTION_NAMES[id] || id) : t('Не разблокировано')}
                   className={`relative w-full aspect-square flex items-center justify-center text-xl rounded-lg transition-all ${
                     owned
                       ? 'hover:bg-discord-light/20 hover:scale-110 active:scale-95 cursor-pointer'

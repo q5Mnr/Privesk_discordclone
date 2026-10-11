@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Hash, Volume2, Users, ChevronRight, MessageCircle } from 'lucide-react';
 import { apiGet } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function CommunitiesPage({ servers, onSelectServer, onSelectChannel, onClose }) {
   const [serverChannels, setServerChannels] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedServer, setExpandedServer] = useState(null);
+  const { t } = useI18n();
 
   useEffect(() => { loadAllChannels(); }, []);
 
@@ -25,18 +27,18 @@ export default function CommunitiesPage({ servers, onSelectServer, onSelectChann
     <div className="flex-1 overflow-y-auto bg-discord-mid">
       <div className="h-16 px-6 flex items-center border-b border-discord-light/20 bg-discord-mid/80 backdrop-blur-xl sticky top-0 z-10">
         <Users size={22} className="text-discord-accent mr-3" />
-        <h2 className="text-xl font-bold text-discord-white">Все мои каналы</h2>
-        <span className="ml-3 text-sm text-discord-muted">{servers.length} серверов</span>
+        <h2 className="text-xl font-bold text-discord-white">{t('Все мои каналы')}</h2>
+        <span className="ml-3 text-sm text-discord-muted">{servers.length} {t('серверов')}</span>
       </div>
 
       <div className="p-6 max-w-3xl">
         {loading ? (
-          <div className="text-center py-10 text-discord-muted">Загрузка каналов...</div>
+          <div className="text-center py-10 text-discord-muted">{t('Загрузка каналов...')}</div>
         ) : servers.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-4">🏠</div>
-            <h3 className="text-lg font-bold text-discord-white mb-2">Нет серверов</h3>
-            <p className="text-sm text-discord-muted">Вы пока не состоите ни в одном сервере</p>
+            <h3 className="text-lg font-bold text-discord-white mb-2">{t('Нет серверов')}</h3>
+            <p className="text-sm text-discord-muted">{t('Вы пока не состоите ни в одном сервере')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -58,7 +60,7 @@ export default function CommunitiesPage({ servers, onSelectServer, onSelectChann
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-discord-white truncate">{server.name}</h3>
-                      <p className="text-xs text-discord-muted">{channels.length} текстовых каналов</p>
+                      <p className="text-xs text-discord-muted">{channels.length} {t('текстовых каналов')}</p>
                     </div>
                     <ChevronRight size={18} className={`text-discord-muted transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </div>
@@ -75,7 +77,7 @@ export default function CommunitiesPage({ servers, onSelectServer, onSelectChann
                         </div>
                       ))}
                       {channels.length === 0 && (
-                        <p className="text-xs text-discord-muted py-2 px-3">Нет текстовых каналов</p>
+                        <p className="text-xs text-discord-muted py-2 px-3">{t('Нет текстовых каналов')}</p>
                       )}
                     </div>
                   )}

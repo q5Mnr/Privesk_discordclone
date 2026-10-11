@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Trophy, Sparkles, Lock, Check, Eye, EyeOff, Search, User } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const RARITY_CONFIG = {
   common: { label: 'Обычный', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/30', glow: '' },
   rare: { label: 'Редкий', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30', glow: 'shadow-blue-500/20' },
-  epic: { label: 'Эпический', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30', glow: 'shadow-purple-500/20' },
+  epic: { label: 'Эпический', color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/30', glow: 'shadow-sky-500/20' },
   legendary: { label: 'Легендарный', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', glow: 'shadow-yellow-500/30' },
-  secret: { label: 'Секретный', color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/30', glow: 'shadow-pink-500/30' },
+  secret: { label: 'Секретный', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', glow: 'shadow-cyan-500/30' },
   admin: { label: 'Админ', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', glow: 'shadow-red-500/30' },
 };
 
@@ -60,6 +61,7 @@ const CollectionPage = ({ user, onBack }) => {
   const [viewData, setViewData] = useState(null);
   const [searchUsername, setSearchUsername] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const { t } = useI18n();
 
   useEffect(() => { loadData(); }, []);
 
@@ -85,7 +87,7 @@ const CollectionPage = ({ user, onBack }) => {
       }
     } catch (e) {
       console.error('Collection load error:', e);
-      setError(e.message || 'Ошибка загрузки');
+      setError(e.message || t('Ошибка загрузки'));
     }
     setLoading(false);
   };
@@ -97,7 +99,7 @@ const CollectionPage = ({ user, onBack }) => {
       setViewUserId(userId);
       setTab('view');
     } catch (e) {
-      setToast({ text: 'Не удалось загрузить коллекцию', type: 'error' });
+      setToast({ text: t('Не удалось загрузить коллекцию'), type: 'error' });
       setTimeout(() => setToast(null), 2000);
     }
   };
@@ -115,10 +117,10 @@ const CollectionPage = ({ user, onBack }) => {
   const handleEquip = async (emojiId) => {
     try {
       await apiPost('/api/collection/equip', { emoji_id: emojiId });
-      setToast({ text: 'Эмодзи установлен на профиль!', type: 'success' });
+      setToast({ text: t('Эмодзи установлен на профиль!'), type: 'success' });
       loadData();
     } catch (e) {
-      setToast({ text: 'Ошибка', type: 'error' });
+      setToast({ text: t('Ошибка'), type: 'error' });
     }
     setTimeout(() => setToast(null), 2000);
   };
@@ -126,7 +128,7 @@ const CollectionPage = ({ user, onBack }) => {
   const handleUnequip = async () => {
     try {
       await apiPost('/api/collection/unequip', {});
-      setToast({ text: 'Эмодзи убран с профиля', type: 'success' });
+      setToast({ text: t('Эмодзи убран с профиля'), type: 'success' });
       loadData();
     } catch (e) {}
     setTimeout(() => setToast(null), 2000);
@@ -136,9 +138,9 @@ const CollectionPage = ({ user, onBack }) => {
     try {
       const data = await apiPost('/api/collection/toggle-privacy', {});
       setIsHidden(data?.hidden);
-      setToast({ text: data?.hidden ? 'Коллекция скрыта от других' : 'Коллекция теперь видна всем', type: 'success' });
+      setToast({ text: data?.hidden ? t('Коллекция скрыта от других') : t('Коллекция теперь видна всем'), type: 'success' });
     } catch (e) {
-      setToast({ text: 'Ошибка', type: 'error' });
+      setToast({ text: t('Ошибка'), type: 'error' });
     }
     setTimeout(() => setToast(null), 2000);
   };
@@ -147,13 +149,13 @@ const CollectionPage = ({ user, onBack }) => {
     try {
       const data = await apiPost('/api/collection/check-achievements', {});
       if (data.newAchievements?.length > 0) {
-        setToast({ text: `Получено ${data.newAchievements.length} новых достижений!`, type: 'success' });
+        setToast({ text: t('Получено {count} новых достижений!', { count: data.newAchievements.length }), type: 'success' });
       } else {
-        setToast({ text: 'Новых достижений нет', type: 'info' });
+        setToast({ text: t('Новых достижений нет'), type: 'info' });
       }
       loadData();
     } catch (e) {
-      setToast({ text: 'Ошибка проверки', type: 'error' });
+      setToast({ text: t('Ошибка проверки'), type: 'error' });
     }
     setTimeout(() => setToast(null), 3000);
   };
@@ -165,7 +167,7 @@ const CollectionPage = ({ user, onBack }) => {
   if (loading) {
     return (
       <div className="flex-1 h-full overflow-y-auto bg-discord-mid flex items-center justify-center">
-        <div className="text-discord-gray">Загрузка...</div>
+        <div className="text-discord-gray">{t('Загрузка...')}</div>
       </div>
     );
   }
@@ -190,18 +192,18 @@ const CollectionPage = ({ user, onBack }) => {
           <ArrowLeft size={20} />
         </button>
         <Trophy size={20} className="text-yellow-400 mr-2" />
-        <h2 className="text-xl font-bold text-discord-white">Коллекция</h2>
+        <h2 className="text-xl font-bold text-discord-white">{t('Коллекция')}</h2>
         <div className="ml-auto flex items-center gap-2">
           <button onClick={handleTogglePrivacy}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors font-medium ${
               isHidden ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
             }`}>
             {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            {isHidden ? 'Скрыто' : 'Видно'}
+            {isHidden ? t('Скрыто') : t('Видно')}
           </button>
           <button onClick={handleCheckAchievements}
             className="px-3 py-1.5 bg-discord-blurple/20 text-discord-blurple rounded-lg text-xs hover:bg-discord-blurple/30 transition-colors font-medium">
-            Проверить достижения
+            {t('Проверить достижения')}
           </button>
         </div>
       </div>
@@ -212,7 +214,7 @@ const CollectionPage = ({ user, onBack }) => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-discord-white font-bold text-lg">{user?.username}</h3>
-              <p className="text-discord-gray text-sm">Коллекция и достижения</p>
+              <p className="text-discord-gray text-sm">{t('Коллекция и достижения')}</p>
             </div>
             {equipped.length > 0 && (
               <div className="flex items-center gap-2 bg-discord-light/10 px-3 py-1.5 rounded-full">
@@ -220,7 +222,7 @@ const CollectionPage = ({ user, onBack }) => {
                   const em = emojis.find(e => e.id === eid);
                   return em ? <span key={eid} className="text-xl">{em.emoji}</span> : null;
                 })}
-                <span className="text-discord-white text-xs">На профиле</span>
+                <span className="text-discord-white text-xs">{t('На профиле')}</span>
               </div>
             )}
           </div>
@@ -229,13 +231,13 @@ const CollectionPage = ({ user, onBack }) => {
               { label: 'Всего', value: stats.total || 0, color: 'text-discord-white' },
               { label: 'Обычные', value: stats.common || 0, color: 'text-gray-400' },
               { label: 'Редкие', value: stats.rare || 0, color: 'text-blue-400' },
-              { label: 'Эпические', value: stats.epic || 0, color: 'text-purple-400' },
+              { label: 'Эпические', value: stats.epic || 0, color: 'text-sky-400' },
               { label: 'Легендарные', value: stats.legendary || 0, color: 'text-yellow-400' },
-              { label: 'Секретные', value: stats.secret || 0, color: 'text-pink-400' },
+              { label: 'Секретные', value: stats.secret || 0, color: 'text-cyan-400' },
             ].map(({ label, value, color }) => (
               <div key={label} className="text-center">
                 <div className={`text-lg font-bold ${color}`}>{value}</div>
-                <div className="text-discord-gray text-[10px]">{label}</div>
+                <div className="text-discord-gray text-[10px]">{t(label)}</div>
               </div>
             ))}
           </div>
@@ -255,7 +257,7 @@ const CollectionPage = ({ user, onBack }) => {
               tab === id ? 'bg-discord-blurple text-white' : 'text-discord-gray hover:text-discord-white hover:bg-discord-light/10'
             }`}>
             <Icon size={16} />
-            <span>{label}</span>
+            <span>{t(label)}</span>
             {count && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tab === id ? 'bg-white/20' : 'bg-discord-light/10'}`}>{count}</span>}
           </button>
         ))}
@@ -268,16 +270,16 @@ const CollectionPage = ({ user, onBack }) => {
             {myCollection.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">📦</div>
-                <div className="text-discord-white font-semibold mb-1">Коллекция пуста</div>
-                <div className="text-discord-gray text-sm">Выполняйте достижения, чтобы получить эмодзи</div>
+                <div className="text-discord-white font-semibold mb-1">{t('Коллекция пуста')}</div>
+                <div className="text-discord-gray text-sm">{t('Выполняйте достижения, чтобы получить эмодзи')}</div>
               </div>
             ) : (
               <>
                 {equipped.length > 0 && (
                   <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-discord-white text-sm font-semibold">На профиле</span>
-                      <button onClick={handleUnequip} className="text-red-400 text-xs hover:text-red-300">Убрать</button>
+                      <span className="text-discord-white text-sm font-semibold">{t('На профиле')}</span>
+                      <button onClick={handleUnequip} className="text-red-400 text-xs hover:text-red-300">{t('Убрать')}</button>
                     </div>
                     <div className="flex items-center gap-3">
                       {equipped.map(eid => {
@@ -304,7 +306,7 @@ const CollectionPage = ({ user, onBack }) => {
                         {isEquipped && <div className="absolute -top-1 -right-1 w-4 h-4 bg-discord-blurple rounded-full flex items-center justify-center"><Check size={10} className="text-white" /></div>}
                         <div className="text-3xl mb-1">{item.emoji}</div>
                         <div className="text-discord-white text-xs font-medium truncate">{item.name}</div>
-                        <div className={`text-[10px] ${rarity.color}`}>{rarity.label}</div>
+                        <div className={`text-[10px] ${rarity.color}`}>{t(rarity.label)}</div>
                       </div>
                     );
                   })}
@@ -319,7 +321,7 @@ const CollectionPage = ({ user, onBack }) => {
           <div className="space-y-3">
             <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10 mb-2">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-discord-white font-semibold text-sm">Прогресс</h4>
+                <h4 className="text-discord-white font-semibold text-sm">{t('Прогресс')}</h4>
                 <span className="text-discord-blurple text-sm font-bold">{earnedIds.length} / {allAchievements.length}</span>
               </div>
               <div className="w-full h-2 bg-discord-light/10 rounded-full overflow-hidden">
@@ -331,8 +333,8 @@ const CollectionPage = ({ user, onBack }) => {
             {allAchievements.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">🏆</div>
-                <div className="text-discord-white font-semibold mb-1">Достижений пока нет</div>
-                <div className="text-discord-gray text-sm">Начните активность на сервере!</div>
+                <div className="text-discord-white font-semibold mb-1">{t('Достижений пока нет')}</div>
+                <div className="text-discord-gray text-sm">{t('Начните активность на сервере!')}</div>
               </div>
             ) : (
               <>
@@ -358,7 +360,7 @@ const CollectionPage = ({ user, onBack }) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`font-semibold text-sm ${earned ? 'text-discord-white' : 'text-discord-gray'}`}>{ach.name}</span>
-                          {earned && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded text-[10px] font-bold">ПОЛУЧЕНО</span>}
+                          {earned && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded-lg text-[10px] font-bold">{t('ПОЛУЧЕНО')}</span>}
                         </div>
                         <div className="text-discord-muted text-xs">{ach.description}</div>
                       </div>
@@ -366,7 +368,7 @@ const CollectionPage = ({ user, onBack }) => {
                         <div className="text-center flex-shrink-0">
                           <div className="text-2xl mb-0.5">{emojiInfo.emoji}</div>
                           <div className={`text-[10px] ${RARITY_CONFIG[emojiInfo.rarity]?.color}`}>
-                            {RARITY_CONFIG[emojiInfo.rarity]?.label}
+                            {t(RARITY_CONFIG[emojiInfo.rarity]?.label)}
                           </div>
                         </div>
                       )}
@@ -375,7 +377,7 @@ const CollectionPage = ({ user, onBack }) => {
                       <div className="px-4 pb-3 -mt-1">
                         <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-discord-blurple/5 border border-discord-blurple/10">
                           <span className="text-xs mt-0.5">💡</span>
-                          <span className="text-discord-gray text-[11px] leading-relaxed">{HOW_TO[ach.id]}</span>
+                          <span className="text-discord-gray text-[11px] leading-relaxed">{t(HOW_TO[ach.id])}</span>
                         </div>
                       </div>
                     )}
@@ -390,7 +392,7 @@ const CollectionPage = ({ user, onBack }) => {
                 <>
                   <div className="flex items-center gap-2 mt-4 mb-2">
                     <div className="h-px flex-1 bg-discord-light/10" />
-                    <span className="text-[11px] text-pink-400 font-bold uppercase tracking-wider">Секретные и Админ достижения</span>
+                    <span className="text-[11px] text-cyan-400 font-bold uppercase tracking-wider">{t('Секретные и Админ достижения')}</span>
                     <div className="h-px flex-1 bg-discord-light/10" />
                   </div>
                   {allAchievements.filter(a => {
@@ -418,24 +420,24 @@ const CollectionPage = ({ user, onBack }) => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className={`font-semibold text-sm ${earned ? 'text-discord-white' : 'text-discord-gray'}`}>{ach.name}</span>
-                              {isSecret && <span className="px-1.5 py-0.5 bg-pink-500/20 text-pink-400 rounded text-[10px] font-bold">СЕКРЕТ</span>}
-                              {isAdmin && <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-[10px] font-bold">АДМИН</span>}
-                              {earned && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded text-[10px] font-bold">ПОЛУЧЕНО</span>}
+                              {isSecret && <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 rounded-lg text-[10px] font-bold">{t('СЕКРЕТ')}</span>}
+                              {isAdmin && <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold">{t('АДМИН')}</span>}
+                              {earned && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded-lg text-[10px] font-bold">{t('ПОЛУЧЕНО')}</span>}
                             </div>
                             <div className="text-discord-muted text-xs">{ach.description}</div>
                           </div>
                           {emojiInfo && (
                             <div className="text-center flex-shrink-0">
                               <div className="text-2xl mb-0.5">{earned ? emojiInfo.emoji : '❓'}</div>
-                              <div className={`text-[10px] ${rarity.color}`}>{rarity.label}</div>
+                              <div className={`text-[10px] ${rarity.color}`}>{t(rarity.label)}</div>
                             </div>
                           )}
                         </div>
                         {!earned && HOW_TO[ach.id] && (
                           <div className="px-4 pb-3 -mt-1">
-                            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-pink-500/5 border border-pink-500/10">
+                            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-cyan-500/5 border border-cyan-500/10">
                               <span className="text-xs mt-0.5">🔒</span>
-                              <span className="text-discord-gray text-[11px] leading-relaxed">{isSecret ? '??? — Условие засекречено' : HOW_TO[ach.id]}</span>
+                              <span className="text-discord-gray text-[11px] leading-relaxed">{isSecret ? t('??? — Условие засекречено') : t(HOW_TO[ach.id])}</span>
                             </div>
                           </div>
                         )}
@@ -460,13 +462,13 @@ const CollectionPage = ({ user, onBack }) => {
                       ? r === 'all' ? 'bg-discord-blurple text-white'
                         : r === 'common' ? 'bg-gray-500 text-white'
                         : r === 'rare' ? 'bg-blue-500 text-white'
-                        : r === 'epic' ? 'bg-purple-500 text-white'
+                        : r === 'epic' ? 'bg-sky-500 text-white'
                         : r === 'legendary' ? 'bg-yellow-500 text-white'
-                        : r === 'secret' ? 'bg-pink-500 text-white'
+                        : r === 'secret' ? 'bg-cyan-500 text-white'
                         : 'bg-red-500 text-white'
                       : 'bg-discord-light/10 text-discord-gray hover:text-discord-white'
                   }`}>
-                  {r === 'all' ? 'Все' : RARITY_CONFIG[r]?.label} ({r === 'all' ? emojis.length : emojis.filter(e => e.rarity === r).length})
+                  {r === 'all' ? t('Все') : t(RARITY_CONFIG[r]?.label)} ({r === 'all' ? emojis.length : emojis.filter(e => e.rarity === r).length})
                 </button>
               ))}
             </div>
@@ -483,7 +485,7 @@ const CollectionPage = ({ user, onBack }) => {
                     {owned && <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"><Check size={10} className="text-white" /></div>}
                     <div className="text-3xl mb-1">{isSecretLocked ? '❓' : emoji.emoji}</div>
                     <div className="text-discord-white text-xs font-medium truncate">{isSecretLocked ? '???' : emoji.name}</div>
-                    <div className={`text-[10px] ${rarity.color}`}>{rarity.label}</div>
+                    <div className={`text-[10px] ${rarity.color}`}>{t(rarity.label)}</div>
                     {!owned && <Lock size={10} className="absolute bottom-1 right-1 text-discord-muted" />}
                   </div>
                 );
@@ -500,12 +502,12 @@ const CollectionPage = ({ user, onBack }) => {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-discord-gray" />
                 <input value={searchUsername} onChange={e => setSearchUsername(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSearchUsers()}
-                  placeholder="Введите имя пользователя..."
+                  placeholder={t('Введите имя пользователя...')}
                   className="w-full pl-10 pr-4 py-2.5 bg-discord-darker border border-discord-light/20 rounded-lg text-discord-white text-sm placeholder-discord-gray focus:outline-none focus:border-discord-blurple" />
               </div>
               <button onClick={handleSearchUsers}
                 className="px-4 py-2.5 bg-discord-blurple text-white rounded-lg text-sm font-medium hover:bg-discord-blurple/80 transition-colors">
-                Найти
+                {t('Найти')}
               </button>
             </div>
             <div className="space-y-2">
@@ -517,15 +519,15 @@ const CollectionPage = ({ user, onBack }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-discord-white text-sm font-semibold truncate">{u.username}</div>
-                    <div className="text-discord-gray text-xs">Нажмите, чтобы посмотреть коллекцию</div>
+                    <div className="text-discord-gray text-xs">{t('Нажмите, чтобы посмотреть коллекцию')}</div>
                   </div>
                 </div>
               ))}
               {searchUsername && searchResults.length === 0 && (
-                <div className="text-center py-8 text-discord-gray text-sm">Пользователи не найдены</div>
+                <div className="text-center py-8 text-discord-gray text-sm">{t('Пользователи не найдены')}</div>
               )}
               {!searchUsername && (
-                <div className="text-center py-8 text-discord-gray text-sm">Введите имя для поиска</div>
+                <div className="text-center py-8 text-discord-gray text-sm">{t('Введите имя для поиска')}</div>
               )}
             </div>
           </div>
@@ -535,32 +537,32 @@ const CollectionPage = ({ user, onBack }) => {
         {tab === 'view' && viewData && (
           <div className="space-y-4">
             <button onClick={() => setTab('search')} className="text-discord-blurple text-sm hover:underline flex items-center gap-1">
-              <ArrowLeft size={14} /> Назад к поиску
+              <ArrowLeft size={14} /> {t('Назад к поиску')}
             </button>
             {viewData.hidden ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">🔒</div>
-                <div className="text-discord-white font-semibold mb-1">Коллекция скрыта</div>
-                <div className="text-discord-gray text-sm">Пользователь скрыл свою коллекцию</div>
+                <div className="text-discord-white font-semibold mb-1">{t('Коллекция скрыта')}</div>
+                <div className="text-discord-gray text-sm">{t('Пользователь скрыл свою коллекцию')}</div>
               </div>
             ) : (
               <>
                 <div className="bg-discord-darker rounded-xl p-4 border border-discord-light/10">
                   <div className="text-discord-white font-semibold text-sm mb-2">
-                    Всего эмодзи: {viewData.totalEmoji} | Достижений: {viewData.totalAchievements}
+                    {t('Всего эмодзи:')} {viewData.totalEmoji} | {t('Достижений:')} {viewData.totalAchievements}
                   </div>
                   {viewData.equipped?.length > 0 && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-discord-gray text-xs">На профиле:</span>
+                      <span className="text-discord-gray text-xs">{t('На профиле:')}</span>
                       {viewData.equipped.map((e, i) => (
-                        <span key={i} className="text-xl" title={`${e.name} (${RARITY_CONFIG[e.rarity]?.label})`}>{e.emoji}</span>
+                        <span key={i} className="text-xl" title={`${e.name} (${t(RARITY_CONFIG[e.rarity]?.label)})`}>{e.emoji}</span>
                       ))}
                     </div>
                   )}
                 </div>
                 {viewData.collection?.length > 0 && (
                   <div>
-                    <div className="text-discord-white text-sm font-semibold mb-2">Эмодзи</div>
+                    <div className="text-discord-white text-sm font-semibold mb-2">{t('Эмодзи')}</div>
                     <div className="grid grid-cols-6 gap-3">
                       {viewData.collection.map(item => {
                         const rarity = RARITY_CONFIG[item.rarity] || RARITY_CONFIG.common;
@@ -568,7 +570,7 @@ const CollectionPage = ({ user, onBack }) => {
                           <div key={item.emoji_id} className={`p-3 rounded-xl border text-center ${rarity.bg} ${rarity.border}`}>
                             <div className="text-3xl mb-1">{item.emoji}</div>
                             <div className="text-discord-white text-xs font-medium truncate">{item.name}</div>
-                            <div className={`text-[10px] ${rarity.color}`}>{rarity.label}</div>
+                            <div className={`text-[10px] ${rarity.color}`}>{t(rarity.label)}</div>
                           </div>
                         );
                       })}
@@ -577,7 +579,7 @@ const CollectionPage = ({ user, onBack }) => {
                 )}
                 {viewData.achievementsList?.length > 0 && (
                   <div>
-                    <div className="text-discord-white text-sm font-semibold mb-2">Достижения</div>
+                    <div className="text-discord-white text-sm font-semibold mb-2">{t('Достижения')}</div>
                     <div className="grid grid-cols-2 gap-2">
                       {viewData.achievementsList.map(ach => (
                         <div key={ach.achievement_id} className="flex items-center gap-2 p-2 bg-discord-darker rounded-lg border border-discord-light/10">

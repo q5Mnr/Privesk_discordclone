@@ -12,8 +12,8 @@
 
 body {
   font-family: 'Inter', 'Whitney', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-  background-color: #171928;
-  color: #d1d3e0;
+  background-color: #0c1426;
+  color: #cfe6ff;
   overflow: hidden;
   height: 100vh;
 }
@@ -27,16 +27,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #171928;
+  background: #0c1426;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #383c55;
+  background: #20305a;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #464b68;
+  background: #2c4272;
 }
 
 @keyframes pulse {
@@ -50,7 +50,7 @@ body {
 
 @keyframes message-flash {
   0%, 100% { background-color: transparent; }
-  15%, 85% { background-color: rgba(88, 101, 242, 0.22); }
+  15%, 85% { background-color: rgba(34, 211, 238, 0.18); }
 }
 
 .message-highlight {
@@ -68,8 +68,8 @@ body {
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 170, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.4); }
+  0%, 100% { box-shadow: 0 0 5px rgba(34, 211, 238, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.45); }
 }
 
 .animate-glow {
@@ -91,7 +91,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, #6c5ce7, #a855f7, #00d4aa);
+  background: linear-gradient(135deg, #3b82f6, #22d3ee, #67e8f9);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -100,7 +100,7 @@ body {
 }
 
 .bg-glass {
-  background: rgba(23, 25, 40, 0.8);
+  background: rgba(12, 20, 38, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }

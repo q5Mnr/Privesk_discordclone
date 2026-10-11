@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Crown, Sparkles, Check, Star, Zap } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const TIERS = [
   {
@@ -45,9 +46,9 @@ const TIERS = [
     name: 'PRIVET PLUS',
     price: '1499 РУБ',
     period: '/ Месяц',
-    color: 'from-purple-500 to-pink-500',
-    borderColor: 'border-purple-400/30',
-    bgColor: 'bg-purple-400/10',
+    color: 'from-sky-500 to-cyan-500',
+    borderColor: 'border-sky-400/30',
+    bgColor: 'bg-sky-400/10',
     icon: '👑',
     features: [
       'Максимум возможностей',
@@ -86,6 +87,7 @@ export default function SubscriptionsPage({ onBack, user }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     loadSubscription();
@@ -112,7 +114,7 @@ export default function SubscriptionsPage({ onBack, user }) {
         setCurrentTier(tier);
         setExpires(data.expires);
       } else {
-        setMessage(data.error || 'Ошибка');
+        setMessage(data.error || t('Ошибка'));
         setIsError(true);
       }
     } catch (err) {
@@ -129,7 +131,7 @@ export default function SubscriptionsPage({ onBack, user }) {
         <button onClick={onBack} className="mr-4 text-discord-gray hover:text-discord-accent transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <h2 className="text-xl font-bold text-discord-white">Наши товары</h2>
+        <h2 className="text-xl font-bold text-discord-white">{t('Наши товары')}</h2>
       </div>
 
       <div className="p-6 max-w-5xl mx-auto">
@@ -141,14 +143,14 @@ export default function SubscriptionsPage({ onBack, user }) {
                 {currentTier === 'privet' ? '💎' : '👑'}
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">{currentTier === 'privet' ? 'Privet' : 'Privet Plus'}</h3>
+                <h3 className="text-xl font-bold text-white">{currentTier === 'privet' ? t('Privet') : t('Privet Plus')}</h3>
                 {expires && (
-                  <p className="text-white/70 text-sm">Действует до {new Date(expires).toLocaleDateString('ru-RU')}</p>
+                  <p className="text-white/70 text-sm">{t('Действует до')} {new Date(expires).toLocaleDateString('ru-RU')}</p>
                 )}
               </div>
             </div>
             <div className="px-4 py-2 bg-white/20 rounded-xl text-white text-sm font-medium backdrop-blur-sm">
-              Активна
+              {t('Активна')}
             </div>
           </div>
         )}
@@ -170,26 +172,26 @@ export default function SubscriptionsPage({ onBack, user }) {
               >
                 {tier.popular && (
                   <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-400 to-cyan-300 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    ← Лучший выбор
+                    {t('← Лучший выбор')}
                   </div>
                 )}
 
                 <div className={`p-6 ${tier.bgColor}`}>
                   <div className="text-4xl mb-3">{tier.icon}</div>
-                  <h3 className="text-2xl font-bold text-discord-white mb-1">{tier.name}</h3>
+                  <h3 className="text-2xl font-bold text-discord-white mb-1">{t(tier.name)}</h3>
                 </div>
 
                 <div className="p-6 bg-discord-darker/50">
                   <div className="mb-6">
-                    <span className="text-3xl font-bold text-discord-white">{tier.price}</span>
-                    {tier.period && <span className="text-discord-muted text-sm">{tier.period}</span>}
+                    <span className="text-3xl font-bold text-discord-white">{t(tier.price)}</span>
+                    {tier.period && <span className="text-discord-muted text-sm">{t(tier.period)}</span>}
                   </div>
 
                   <div className="space-y-3 mb-6">
                     {tier.features.map((f, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <Check size={16} className="text-discord-accent mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-discord-text">{f}</span>
+                        <span className="text-sm text-discord-text">{t(f)}</span>
                       </div>
                     ))}
                   </div>
@@ -205,7 +207,7 @@ export default function SubscriptionsPage({ onBack, user }) {
                         : `bg-gradient-to-r ${tier.color} text-white hover:shadow-lg hover:shadow-discord-blurple/30`
                     }`}
                   >
-                    {isCurrent ? 'Текущая' : tier.id === 'free' ? 'Текущая' : loading ? '...' : 'Купить'}
+                    {isCurrent ? t('Текущая') : tier.id === 'free' ? t('Текущая') : loading ? '...' : t('Купить')}
                   </button>
                 </div>
               </div>
@@ -213,7 +215,7 @@ export default function SubscriptionsPage({ onBack, user }) {
           })}
         </div>
 
-        <p className="text-center text-[11px] text-discord-muted mt-6">* Подписки на год нет</p>
+        <p className="text-center text-[11px] text-discord-muted mt-6">{t('* Подписки на год нет')}</p>
       </div>
     </div>
   );

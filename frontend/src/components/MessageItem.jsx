@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MoreHorizontal, Pencil, Trash2, SmilePlus, Reply, Pin, MessageSquare, Copy, Check } from 'lucide-react';
 import { apiPost } from '../utils/api';
+import { useI18n } from '../i18n/I18nContext';
 
 const EMOJI_LIST = ['👍', '❤️', '😂', '🎉', '🤔', '👀', '🔥', '💯', '✅', '❌', '🚀', '⭐'];
 
@@ -139,7 +140,7 @@ function renderInlineMarkdown(text) {
       const end = remaining.indexOf('`', 1);
       if (end > 1) {
         parts.push(
-          <code key={key++} className="px-1.5 py-0.5 bg-black/30 rounded text-pink-400 text-[13px] font-mono border border-discord-light/10">
+          <code key={key++} className="px-1.5 py-0.5 bg-black/30 rounded-lg text-cyan-400 text-[13px] font-mono border border-discord-light/10">
             {remaining.slice(1, end)}
           </code>
         );
@@ -161,7 +162,7 @@ function renderInlineMarkdown(text) {
       const m = remaining.slice(1).match(/^(\w+)/);
       if (m) {
         parts.push(
-          <span key={key++} className="bg-discord-blurple/30 text-discord-blurple hover:bg-discord-blurple/50 rounded px-1 py-0.5 cursor-pointer transition-colors font-medium">
+          <span key={key++} className="bg-discord-blurple/30 text-discord-blurple hover:bg-discord-blurple/50 rounded-lg px-1 py-0.5 cursor-pointer transition-colors font-medium">
             @{m[1]}
           </span>
         );
@@ -190,6 +191,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [reactions, setReactions] = useState(message.reactions || []);
+  const { t } = useI18n();
 
   const isOwn = message.user_id === user?.id;
   const canManageMessages = isOwn || ((myPermissions || 0) & 2) !== 0;
@@ -236,7 +238,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
   };
 
   const handleCreateThread = async () => {
-    const name = prompt('Название треда:');
+    const name = prompt(t('Название треда:'));
     if (!name?.trim()) return;
     try {
       const thread = await apiPost('/api/threads', {
@@ -294,14 +296,14 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="p-1.5 hover:bg-discord-light/40 rounded-l-xl text-discord-muted hover:text-discord-text transition-colors"
-              title="Реакция"
+              title={t('Реакция')}
             >
               <SmilePlus size={16} />
             </button>
             <button
               onClick={() => onReply?.(message)}
               className="p-1.5 hover:bg-discord-light/40 text-discord-muted hover:text-discord-text transition-colors"
-              title="Ответить"
+              title={t('Ответить')}
             >
               <Reply size={16} />
             </button>
@@ -309,7 +311,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
               <button
                 onClick={handleCopyText}
                 className="p-1.5 hover:bg-discord-light/40 text-discord-muted hover:text-discord-text transition-colors"
-                title={copied ? 'Скопировано' : 'Копировать текст'}
+                title={copied ? t('Скопировано') : t('Копировать текст')}
               >
                 {copied ? <Check size={16} className="text-discord-green" /> : <Copy size={16} />}
               </button>
@@ -317,14 +319,14 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
             <button
               onClick={() => onPin?.(message)}
               className="p-1.5 hover:bg-discord-light/40 text-discord-muted hover:text-discord-text transition-colors"
-              title="Закрепить"
+              title={t('Закрепить')}
             >
               <Pin size={16} />
             </button>
             <button
               onClick={handleCreateThread}
               className="p-1.5 hover:bg-discord-light/40 text-discord-muted hover:text-discord-text transition-colors"
-              title="Создать тред"
+              title={t('Создать тред')}
             >
               <MessageSquare size={16} />
             </button>
@@ -349,7 +351,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
               <button
                 key={emoji}
                 onClick={() => handleReaction(emoji)}
-                className="w-8 h-8 hover:bg-discord-light rounded flex items-center justify-center text-lg transition-colors"
+                className="w-8 h-8 hover:bg-discord-light rounded-lg flex items-center justify-center text-lg transition-colors"
               >
                 {emoji}
               </button>
@@ -359,14 +361,14 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
 
         {showDeleteConfirm && (
           <div className="absolute -top-16 right-4 bg-discord-darker border border-discord-light/20 rounded-xl p-3 shadow-xl z-20 w-64">
-            <p className="text-sm text-white mb-2">Удалить сообщение?</p>
-            <p className="text-xs text-discord-gray mb-3">Это действие нельзя отменить.</p>
+            <p className="text-sm text-white mb-2">{t('Удалить сообщение?')}</p>
+            <p className="text-xs text-discord-gray mb-3">{t('Это действие нельзя отменить.')}</p>
             <div className="flex gap-2">
-              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-2 py-1 text-xs text-white bg-discord-light rounded hover:bg-discord-lighter transition-colors">
-                Отмена
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-2 py-1 text-xs text-white bg-discord-light rounded-lg hover:bg-discord-lighter transition-colors">
+                {t('Отмена')}
               </button>
-              <button onClick={handleDelete} className="flex-1 px-2 py-1 text-xs text-white bg-discord-red rounded hover:opacity-80 transition-colors">
-                Удалить
+              <button onClick={handleDelete} className="flex-1 px-2 py-1 text-xs text-white bg-discord-red rounded-lg hover:opacity-80 transition-colors">
+                {t('Удалить')}
               </button>
             </div>
           </div>
@@ -377,7 +379,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
             {showHeader && (
               <div className="flex items-baseline gap-2 mb-0.5">
                 {message.edited_at && (
-                  <span className="text-xs text-discord-muted">(ред.)</span>
+                  <span className="text-xs text-discord-muted">{t('(ред.)')}</span>
                 )}
                 <span className="text-xs text-discord-muted">{timestamp}</span>
                 <button
@@ -387,16 +389,16 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
                 >
                   {message.username}
                   {message.equipped_emoji_id && EMOJI_MAP[message.equipped_emoji_id] && (
-                    <span className="ml-1 text-sm" title="Значок на профиле">{EMOJI_MAP[message.equipped_emoji_id]}</span>
+                    <span className="ml-1 text-sm" title={t('Значок на профиле')}>{EMOJI_MAP[message.equipped_emoji_id]}</span>
                   )}
                   {message.user_level >= 2 && (
-                    <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border"
+                    <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-lg text-[9px] font-bold border"
                       style={{
                         backgroundColor: message.user_level >= 50 ? 'rgba(245,158,11,0.15)' : message.user_level >= 25 ? 'rgba(139,92,246,0.15)' : message.user_level >= 10 ? 'rgba(59,130,246,0.15)' : 'rgba(107,114,128,0.15)',
                         borderColor: message.user_level >= 50 ? 'rgba(245,158,11,0.3)' : message.user_level >= 25 ? 'rgba(139,92,246,0.3)' : message.user_level >= 10 ? 'rgba(59,130,246,0.3)' : 'rgba(107,114,128,0.3)',
                         color: message.user_level >= 50 ? '#f59e0b' : message.user_level >= 25 ? '#8b5cf6' : message.user_level >= 10 ? '#3b82f6' : '#9ca3af',
                       }}
-                      title={`Уровень ${message.user_level}`}>
+                      title={t('Уровень {n}', { n: message.user_level })}>
                       Lvl {message.user_level}
                     </span>
                   )}
@@ -425,11 +427,11 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
                     if (e.key === 'Enter') handleEdit();
                     if (e.key === 'Escape') setIsEditing(false);
                   }}
-                  className="flex-1 bg-discord-light px-2 py-1 rounded text-discord-text text-sm focus:outline-none"
+                  className="flex-1 bg-discord-light px-2 py-1 rounded-lg text-discord-text text-sm focus:outline-none"
                   autoFocus
                 />
                 <button onClick={handleEdit} className="text-xs text-discord-blurple hover:underline">
-                  Сохранить
+                  {t('Сохранить')}
                 </button>
               </div>
             ) : (
@@ -443,9 +445,9 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
                 {message.attachments.map(att => (
                   <div key={att.id}>
                     {att.mime_type?.startsWith('image/') ? (
-                      <img src={att.url} alt={att.original_name} className="max-w-sm max-h-64 rounded object-cover cursor-pointer hover:opacity-90" />
+                      <img src={att.url} alt={att.original_name} className="max-w-sm max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90" />
                     ) : (
-                      <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-discord-darker/50 px-3 py-2 rounded text-sm text-discord-blurple hover:underline">
+                      <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-discord-darker/50 px-3 py-2 rounded-lg text-sm text-discord-blurple hover:underline">
                         📎 {att.original_name}
                       </a>
                     )}
@@ -511,14 +513,14 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             className="p-1.5 hover:bg-discord-light rounded-l-lg text-discord-gray hover:text-discord-text transition-colors"
-            title="Реакция"
+            title={t('Реакция')}
           >
             <SmilePlus size={16} />
           </button>
           <button
             onClick={() => onReply?.(message)}
             className="p-1.5 hover:bg-discord-light text-discord-gray hover:text-discord-text transition-colors"
-            title="Ответить"
+            title={t('Ответить')}
           >
             <Reply size={16} />
           </button>
@@ -526,7 +528,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
             <button
               onClick={handleCopyText}
               className="p-1.5 hover:bg-discord-light text-discord-gray hover:text-discord-text transition-colors"
-              title={copied ? 'Скопировано' : 'Копировать текст'}
+              title={copied ? t('Скопировано') : t('Копировать текст')}
             >
               {copied ? <Check size={16} className="text-discord-green" /> : <Copy size={16} />}
             </button>
@@ -535,7 +537,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
             <button
               onClick={() => onPin?.(message)}
               className="p-1.5 hover:bg-discord-light/40 text-discord-muted hover:text-discord-text transition-colors"
-              title="Закрепить"
+              title={t('Закрепить')}
             >
               <Pin size={16} />
             </button>
@@ -543,7 +545,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
           <button
             onClick={handleCreateThread}
             className="p-1.5 hover:bg-discord-light text-discord-gray hover:text-discord-text transition-colors"
-            title="Создать тред"
+            title={t('Создать тред')}
           >
             <MessageSquare size={16} />
           </button>
@@ -572,7 +574,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
             <button
               key={emoji}
               onClick={() => handleReaction(emoji)}
-              className="w-8 h-8 hover:bg-discord-light rounded flex items-center justify-center text-lg transition-colors"
+              className="w-8 h-8 hover:bg-discord-light rounded-lg flex items-center justify-center text-lg transition-colors"
             >
               {emoji}
             </button>
@@ -582,14 +584,14 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
 
       {showDeleteConfirm && (
           <div className="absolute -top-16 right-4 bg-discord-darker border border-discord-light/20 rounded-xl p-3 shadow-xl z-20 w-64">
-          <p className="text-sm text-white mb-2">Удалить сообщение?</p>
-          <p className="text-xs text-discord-gray mb-3">Это действие нельзя отменить.</p>
+          <p className="text-sm text-white mb-2">{t('Удалить сообщение?')}</p>
+          <p className="text-xs text-discord-gray mb-3">{t('Это действие нельзя отменить.')}</p>
           <div className="flex gap-2">
-            <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-2 py-1 text-xs text-white bg-discord-light rounded hover:bg-discord-lighter transition-colors">
-              Отмена
+            <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-2 py-1 text-xs text-white bg-discord-light rounded-lg hover:bg-discord-lighter transition-colors">
+              {t('Отмена')}
             </button>
-            <button onClick={handleDelete} className="flex-1 px-2 py-1 text-xs text-white bg-discord-red rounded hover:opacity-80 transition-colors">
-              Удалить
+            <button onClick={handleDelete} className="flex-1 px-2 py-1 text-xs text-white bg-discord-red rounded-lg hover:opacity-80 transition-colors">
+              {t('Удалить')}
             </button>
           </div>
         </div>
@@ -625,16 +627,16 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
               >
                 {message.username}
                 {message.equipped_emoji_id && EMOJI_MAP[message.equipped_emoji_id] && (
-                  <span className="ml-1 text-sm" title="Значок на профиле">{EMOJI_MAP[message.equipped_emoji_id]}</span>
+                  <span className="ml-1 text-sm" title={t('Значок на профиле')}>{EMOJI_MAP[message.equipped_emoji_id]}</span>
                 )}
                 {message.user_level >= 2 && (
-                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border"
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-lg text-[9px] font-bold border"
                     style={{
                       backgroundColor: message.user_level >= 50 ? 'rgba(245,158,11,0.15)' : message.user_level >= 25 ? 'rgba(139,92,246,0.15)' : message.user_level >= 10 ? 'rgba(59,130,246,0.15)' : 'rgba(107,114,128,0.15)',
                       borderColor: message.user_level >= 50 ? 'rgba(245,158,11,0.3)' : message.user_level >= 25 ? 'rgba(139,92,246,0.3)' : message.user_level >= 10 ? 'rgba(59,130,246,0.3)' : 'rgba(107,114,128,0.3)',
                       color: message.user_level >= 50 ? '#f59e0b' : message.user_level >= 25 ? '#8b5cf6' : message.user_level >= 10 ? '#3b82f6' : '#9ca3af',
                     }}
-                    title={`Уровень ${message.user_level}`}>
+                    title={t('Уровень {n}', { n: message.user_level })}>
                     Lvl {message.user_level}
                   </span>
                 )}
@@ -642,7 +644,7 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
               </button>
               <span className="text-xs text-discord-muted">{timestamp}</span>
               {message.edited_at && (
-                <span className="text-xs text-discord-muted">(ред.)</span>
+                <span className="text-xs text-discord-muted">{t('(ред.)')}</span>
               )}
             </div>
           )}
@@ -667,11 +669,11 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
                   if (e.key === 'Enter') handleEdit();
                   if (e.key === 'Escape') setIsEditing(false);
                 }}
-                className="flex-1 bg-discord-light px-2 py-1 rounded text-discord-text text-sm focus:outline-none"
+                className="flex-1 bg-discord-light px-2 py-1 rounded-lg text-discord-text text-sm focus:outline-none"
                 autoFocus
               />
               <button onClick={handleEdit} className="text-xs text-discord-blurple hover:underline">
-                Сохранить
+                {t('Сохранить')}
               </button>
             </div>
           ) : (
@@ -683,9 +685,9 @@ function MessageItem({ message, user, showHeader, onReply, onPin, onUsernameClic
               {message.attachments.map(att => (
                 <div key={att.id}>
                   {att.mime_type?.startsWith('image/') ? (
-                    <img src={att.url} alt={att.original_name} className="max-w-sm max-h-64 rounded object-cover cursor-pointer hover:opacity-90" />
+                    <img src={att.url} alt={att.original_name} className="max-w-sm max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90" />
                   ) : (
-                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-discord-darker/50 px-3 py-2 rounded text-sm text-discord-blurple hover:underline">
+                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-discord-darker/50 px-3 py-2 rounded-lg text-sm text-discord-blurple hover:underline">
                       📎 {att.original_name}
                     </a>
                   )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, TrendingUp, MessageCircle } from 'lucide-react';
 import SubscriptionBadge from './SubscriptionBadge';
+import { useI18n } from '../i18n/I18nContext';
 
 const STATUS_COLORS = {
   online: 'bg-discord-green shadow-lg shadow-discord-green/50',
@@ -38,15 +39,16 @@ function getGroupColor(m) {
   const customRoles = (m.roles || []).filter(r => !r.is_default);
   if (customRoles.length > 0) return customRoles[0].color;
   switch (m.role) {
-    case 'owner': return '#ffa502';
-    case 'admin': return '#ff4757';
-    case 'moderator': return '#00d4aa';
+    case 'owner': return '#fbbf24';
+    case 'admin': return '#f43f5e';
+    case 'moderator': return '#22d3ee';
     default: return null;
   }
 }
 
 function MemberList({ members, onUsernameClick }) {
   const [search, setSearch] = useState('');
+  const { t } = useI18n();
   const q = search.toLowerCase();
   const filtered = members.filter(m => !q || (m.username || '').toLowerCase().includes(q) || (m.nickname || '').toLowerCase().includes(q));
   const sorted = sortMembers(filtered);
@@ -76,9 +78,9 @@ function MemberList({ members, onUsernameClick }) {
       const customRoles = (member.roles || []).filter(r => !r.is_default);
       if (customRoles.length > 0) return customRoles[0].color;
       if (member.role_color) return member.role_color;
-      if (member.role === 'owner') return '#ffa502';
-      if (member.role === 'admin') return '#ff4757';
-      if (member.role === 'moderator') return '#00d4aa';
+  if (member.role === 'owner') return '#fbbf24';
+  if (member.role === 'admin') return '#f43f5e';
+      if (member.role === 'moderator') return '#22d3ee';
       return null;
     })();
 
@@ -124,7 +126,7 @@ function MemberList({ members, onUsernameClick }) {
               {badges.map((b, i) => (
                 <span
                   key={i}
-                  className="text-[10px] px-1.5 py-0.5 rounded-md font-medium"
+                  className="text-[10px] px-1.5 py-0.5 rounded-lg font-medium"
                   style={{ color: b.color, backgroundColor: `${b.color}20` }}
                 >
                   {b.name}
@@ -139,11 +141,11 @@ function MemberList({ members, onUsernameClick }) {
   };
 
   return (
-    <div className="w-[280px] bg-discord-darker flex flex-col flex-shrink-0 overflow-y-auto border-l border-discord-light/30">
+    <div className="w-[280px] bg-discord-darker flex flex-col flex-shrink-0 overflow-y-auto border border-discord-light/20 rounded-2xl">
       {/* Online Now Header */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-discord-white">Online Now</h3>
+          <h3 className="text-sm font-bold text-discord-white">{t('Сейчас в сети')}</h3>
           <span className="text-xs text-discord-accent font-medium">{onlineCount}</span>
         </div>
       </div>
@@ -154,9 +156,9 @@ function MemberList({ members, onUsernameClick }) {
           <div key={group.label} className="mb-4">
             <h4
               className="text-[11px] font-bold uppercase tracking-wider mb-2 px-3"
-              style={{ color: group.color || '#5a5e7a' }}
+              style={{ color: group.color || '#5f7ea8' }}
             >
-              {group.label} — {group.members.length}
+              {t(group.label)} — {group.members.length}
             </h4>
             {group.members.map(m => renderMember(m))}
           </div>
@@ -167,16 +169,16 @@ function MemberList({ members, onUsernameClick }) {
       <div className="border-t border-discord-light/20 px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <TrendingUp size={14} className="text-discord-accent" />
-          <h4 className="text-xs font-bold text-discord-white uppercase tracking-wider">Trending</h4>
+          <h4 className="text-xs font-bold text-discord-white uppercase tracking-wider">{t('В тренде')}</h4>
         </div>
         <div className="space-y-2">
           <div className="p-2 rounded-xl bg-discord-mid/50 border border-discord-light/10">
-            <p className="text-xs text-discord-white font-medium truncate">Welcome to this server!</p>
-            <p className="text-[10px] text-discord-muted mt-0.5">General Chat</p>
+            <p className="text-xs text-discord-white font-medium truncate">{t('Добро пожаловать на этот сервер!')}</p>
+            <p className="text-[10px] text-discord-muted mt-0.5">{t('Общий чат')}</p>
           </div>
           <div className="p-2 rounded-xl bg-discord-mid/50 border border-discord-light/10">
-            <p className="text-xs text-discord-white font-medium truncate">Check out the rules</p>
-            <p className="text-[10px] text-discord-muted mt-0.5">Info Channel</p>
+            <p className="text-xs text-discord-white font-medium truncate">{t('Ознакомьтесь с правилами')}</p>
+            <p className="text-[10px] text-discord-muted mt-0.5">{t('Информационный канал')}</p>
           </div>
         </div>
       </div>

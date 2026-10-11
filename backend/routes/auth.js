@@ -803,4 +803,110 @@ router.get('/leaderboard', (req, res) => {
   }
 });
 
+// ================= ADMIN: управление пользователями =================
+
+function requireAdmin(req, res) {
+  const caller = queryOne('SELECT role FROM users WHERE id = ?', [req.userId]);
+  if (!caller || caller.role !== 'admin') {
+    res.status(403).json({ error: 'Admin only' });
+    return null;
+  }
+  return caller;
+}
+
+// GET /api/auth/admin/users?search= — список пользователей (пароли не отдаются)
+router.get('/admin/users', authMiddleware, (req, res) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const search = String(req.query.search || '').trim();
+    const limit = Math.min(parseInt(req.query.limit, 10) || 200, 500);
+    const cols = 'id, username, email, tag, avatar, role, coins, subscription, created_at';
+    let users;
+    if (search) {
+      const like = `%${search}%`;
+      users = query(
+        `SELECT ${cols} FROM users
+         WHERE username LIKE ? OR email LIKE ? OR CAST(tag AS TEXT) LIKE ? OR id LIKE ?
+         ORDER BY created_at DESC LIMIT ?`,
+        [like, like, like, like, limit]
+      );
+    } else {
+      users = query(`SELECT ${cols} FROM users ORDER BY created_at DESC LIMIT ?`, [limit]);
+    }
+    res.json({ users, total: users.length });
+  } catch (e) {
+    logger.error('admin_users_error', e.message, { stack: e.stack, ip: req.ip });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/admin/set-role — установить роль пользователю
+router.post('/admin/set-role', authMiddleware, (req, res) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const { userId, role } = req.body;
+    const allowed = ['user', 'moderator', 'admin'];
+    if (!userId || !allowed.includes(role)) return res.status(400).json({ error: 'Invalid role' });
+    const target = queryOne('SELECT id, username FROM users WHERE id = ?', [userId]);
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    run('UPDATE users SET role = ? WHERE id = ?', [role, userId]);
+    logger.info('admin_set_role', `${target.username} -> ${role}`, { user: req.userId, ip: req.ip });
+    res.json({ success: true, role });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/admin/set-coins — установить точное количество монет
+router.post('/admin/set-coins', authMiddleware, (req, res) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const { userId, coins } = req.body;
+    if (!userId || typeof coins !== 'number' || !Number.isFinite(coins)) {
+      return res.status(400).json({ error: 'Invalid coins' });
+    }
+    const target = queryOne('SELECT id, username FROM users WHERE id = ?', [userId]);
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    const value = Math.max(0, Math.floor(coins));
+    run('UPDATE users SET coins = ? WHERE id = ?', [value, userId]);
+    logger.info('admin_set_coins', `${target.username} -> ${value}`, { user: req.userId, ip: req.ip });
+    res.json({ success: true, coins: value });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/admin/impersonate — войти в аккаунт пользователя
+router.post('/admin/impersonate', authMiddleware, (req, res) => {
+  try {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const { userId } = req.body;
+    const target = queryOne('SELECT id, username, tag, role FROM users WHERE id = ?', [userId]);
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    const token = jwt.sign({ userId: target.id, impersonatedBy: req.userId }, JWT_SECRET, { expiresIn: '7d' });
+    logger.warn('admin_impersonate', `${target.username}#${target.tag}`, { user: req.userId, ip: req.ip });
+    res.json({ success: true, token, user: target });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/admin/delete-user — удалить пользователя
+router.post('/admin/delete-user', authMiddleware, (req, res) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    if (userId === req.userId) return res.status(400).json({ error: 'Cannot delete yourself' });
+    const target = queryOne('SELECT id, username, tag, role FROM users WHERE id = ?', [userId]);
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    run('DELETE FROM users WHERE id = ?', [userId]);
+    logger.warn('admin_delete_user', `${target.username}#${target.tag}`, { user: req.userId, ip: req.ip });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
