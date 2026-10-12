@@ -275,6 +275,26 @@ router.post('/:serverId/channels', authMiddleware, (req, res) => {
   }
 });
 
+router.put('/:serverId/channels/reorder', authMiddleware, (req, res) => {
+  try {
+    const member = queryOne('SELECT * FROM server_members WHERE server_id = ? AND user_id = ?',
+      [req.params.serverId, req.userId]);
+    if (!hasPermission(member, OWNER_ADMIN, req.userId)) return res.status(403).json({ error: 'No permission' });
+
+    const { channels } = req.body;
+    if (!Array.isArray(channels)) return res.status(400).json({ error: 'channels array required' });
+
+    channels.forEach((ch, i) => {
+      run('UPDATE channels SET position = ? WHERE id = ? AND server_id = ?',
+        [i, ch.id, req.params.serverId]);
+    });
+
+    res.json({ message: 'Reordered' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/:serverId/channels', authMiddleware, (req, res) => {
   try {
     const channels = query('SELECT * FROM channels WHERE server_id = ? ORDER BY position', [req.params.serverId]);
@@ -324,26 +344,6 @@ router.delete('/:serverId/channels/:channelId', authMiddleware, (req, res) => {
   }
 });
 
-router.put('/:serverId/channels/reorder', authMiddleware, (req, res) => {
-  try {
-    const member = queryOne('SELECT * FROM server_members WHERE server_id = ? AND user_id = ?',
-      [req.params.serverId, req.userId]);
-    if (!hasPermission(member, OWNER_ADMIN, req.userId)) return res.status(403).json({ error: 'No permission' });
-
-    const { channels } = req.body;
-    if (!Array.isArray(channels)) return res.status(400).json({ error: 'channels array required' });
-
-    channels.forEach((ch, i) => {
-      run('UPDATE channels SET position = ? WHERE id = ? AND server_id = ?',
-        [i, ch.id, req.params.serverId]);
-    });
-
-    res.json({ message: 'Reordered' });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // === MEMBERS ===
 
 router.put('/:serverId/members/:memberId/role', authMiddleware, (req, res) => {
@@ -353,15 +353,19 @@ router.put('/:serverId/members/:memberId/role', authMiddleware, (req, res) => {
       [req.params.serverId, req.userId]);
 
     if (!member) return res.status(403).json({ error: 'No permission' });
+    if (!hasPermission(member, OWNER_ADMIN, req.userId)) return res.status(403).json({ error: 'No permission' });
 
     const targetMember = queryOne('SELECT * FROM server_members WHERE id = ? AND server_id = ?',
       [req.params.memberId, req.params.serverId]);
     if (!targetMember) return res.status(404).json({ error: 'Member not found' });
 
+    const { role } = req.body;
+    if (!['admin', 'moderator', 'member'].includes(role)) return res.status(400).json({ error: 'Invalid role' });
+
     if (targetMember.role === 'owner') return res.status(403).json({ error: 'Cannot change owner role' });
     if (member.role === 'admin' && targetMember.role === 'admin') return res.status(403).json({ error: 'Cannot change admin role' });
+    if (role === 'admin' && member.role !== 'owner') return res.status(403).json({ error: 'Only owner can assign admins' });
 
-    const { role } = req.body;
     run('UPDATE server_members SET role = ? WHERE id = ?', [role, req.params.memberId]);
     invalidatePermissions(targetMember.user_id, req.params.serverId);
     logger.info('member_role_change', `Member ${targetMember.user_id} role -> ${role}`, { user: req.userId });

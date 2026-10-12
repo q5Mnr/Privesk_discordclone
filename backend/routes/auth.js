@@ -544,8 +544,12 @@ const SUBSCRIPTION_TIERS = {
 // POST /api/auth/grant-subscription — grant subscription (casino prize or admin)
 router.post('/grant-subscription', authMiddleware, (req, res) => {
   try {
+    if (!requireAdmin(req, res)) return;
+
     const { tier, days } = req.body;
     if (!tier || !days) return res.status(400).json({ error: 'tier and days required' });
+    if (!SUBSCRIPTION_TIERS[tier]) return res.status(400).json({ error: 'Invalid tier' });
+    if (!(Number(days) > 0)) return res.status(400).json({ error: 'Invalid days' });
 
     const userId = req.userId;
     const user = queryOne('SELECT subscription, subscription_expires FROM users WHERE id = ?', [userId]);
@@ -589,7 +593,7 @@ router.post('/buy-subscription', authMiddleware, (req, res) => {
 // GET /api/auth/all-subscriptions — get all users subscriptions (for badges)
 router.get('/all-subscriptions', authMiddleware, (req, res) => {
   try {
-    const users = query('SELECT id, subscription, subscription_expires FROM users WHERE subscription != "free" AND (subscription_expires IS NULL OR subscription_expires > datetime("now"))');
+    const users = query('SELECT id, subscription, subscription_expires FROM users WHERE subscription != "free" AND (subscription_expires IS NULL OR datetime(subscription_expires) > datetime("now"))');
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });

@@ -23,7 +23,7 @@ router.get('/server/:serverId', (req, res) => {
     const boosts = query(`
       SELECT sb.*, u.username, u.avatar FROM server_boosts sb
       JOIN users u ON sb.user_id = u.id
-      WHERE sb.server_id = ? AND sb.expires_at > datetime('now')
+      WHERE sb.server_id = ? AND datetime(sb.expires_at) > datetime('now')
       ORDER BY sb.purchased_at DESC
     `, [req.params.serverId]);
     const total = boosts.length;
@@ -38,7 +38,7 @@ router.get('/server/:serverId', (req, res) => {
 router.get('/server/:serverId/me', authMiddleware, (req, res) => {
   try {
     const boost = queryOne(
-      'SELECT * FROM server_boosts WHERE server_id = ? AND user_id = ? AND expires_at > datetime(\'now\')',
+      'SELECT * FROM server_boosts WHERE server_id = ? AND user_id = ? AND datetime(expires_at) > datetime(\'now\')',
       [req.params.serverId, req.userId]
     );
     res.json({ boost: boost || null });
@@ -57,7 +57,7 @@ router.post('/server/:serverId', authMiddleware, (req, res) => {
     if (!server) return res.status(404).json({ error: 'Server not found' });
 
     const existing = queryOne(
-      'SELECT * FROM server_boosts WHERE server_id = ? AND user_id = ? AND expires_at > datetime(\'now\')',
+      'SELECT * FROM server_boosts WHERE server_id = ? AND user_id = ? AND datetime(expires_at) > datetime(\'now\')',
       [req.params.serverId, req.userId]
     );
     if (existing) return res.status(400).json({ error: 'Вы уже бустите этот сервер' });
@@ -72,7 +72,7 @@ router.post('/server/:serverId', authMiddleware, (req, res) => {
       [uuidv4(), req.params.serverId, req.userId, tier, expiresAt]);
 
     const updatedUser = queryOne('SELECT coins FROM users WHERE id = ?', [req.userId]);
-    const allBoosts = query('SELECT * FROM server_boosts WHERE server_id = ? AND expires_at > datetime(\'now\')', [req.params.serverId]);
+    const allBoosts = query('SELECT * FROM server_boosts WHERE server_id = ? AND datetime(expires_at) > datetime(\'now\')', [req.params.serverId]);
 
     res.json({ success: true, coins: updatedUser?.coins || 0, boostCount: allBoosts.length, tier: allBoosts.length >= 10 ? 3 : allBoosts.length >= 5 ? 2 : allBoosts.length >= 1 ? 1 : 0 });
   } catch (e) {
@@ -87,7 +87,7 @@ router.get('/my', authMiddleware, (req, res) => {
     const boosts = query(`
       SELECT sb.*, s.name as server_name, s.icon as server_icon
       FROM server_boosts sb JOIN servers s ON sb.server_id = s.id
-      WHERE sb.user_id = ? AND sb.expires_at > datetime('now')
+      WHERE sb.user_id = ? AND datetime(sb.expires_at) > datetime('now')
       ORDER BY sb.expires_at DESC
     `, [req.userId]);
     res.json({ boosts });

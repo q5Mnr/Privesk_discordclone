@@ -7,6 +7,12 @@ const logger = require('../logger');
 
 const router = express.Router();
 
+function canAccessChannel(channelId, userId) {
+  const ch = queryOne('SELECT server_id FROM channels WHERE id = ?', [channelId]);
+  if (!ch || !ch.server_id) return false;
+  return !!queryOne('SELECT id FROM server_members WHERE server_id = ? AND user_id = ?', [ch.server_id, userId]);
+}
+
 function messageWithJoins(id) {
     const msg = queryOne(`
     SELECT m.*, u.username, u.avatar, u.tag, u.name_color as user_name_color, u.level as user_level,
@@ -58,6 +64,8 @@ router.get('/:channelId/search', authMiddleware, (req, res) => {
     const { q } = req.query;
     if (!q || q.trim().length < 1) return res.json([]);
 
+    if (!canAccessChannel(req.params.channelId, req.userId)) return res.status(403).json({ error: 'No permission' });
+
     const messages = query(`
       SELECT m.*, u.username, u.avatar, u.tag, u.name_color as user_name_color, u.level as user_level,
         (SELECT ec.emoji_id FROM user_collection ec WHERE ec.user_id = m.user_id AND ec.equipped = 1 LIMIT 1) as equipped_emoji_id
@@ -81,6 +89,8 @@ router.get('/:channelId/search', authMiddleware, (req, res) => {
 // === PINS (must be before /:channelId) ===
 router.get('/:channelId/pins', authMiddleware, (req, res) => {
   try {
+    if (!canAccessChannel(req.params.channelId, req.userId)) return res.status(403).json({ error: 'No permission' });
+
     const pins = query(`
       SELECT m.*, u.username, u.avatar, u.tag, u.name_color as user_name_color, u.level as user_level, pm.created_at as pinned_at,
         (SELECT ec.emoji_id FROM user_collection ec WHERE ec.user_id = m.user_id AND ec.equipped = 1 LIMIT 1) as equipped_emoji_id
@@ -252,7 +262,10 @@ router.get('/:channelId', authMiddleware, (req, res) => {
     const { limit = 50, before } = req.query;
 
     const channelInfo = queryOne('SELECT server_id FROM channels WHERE id = ?', [req.params.channelId]);
-    const serverId = channelInfo?.server_id;
+    if (!channelInfo) return res.status(404).json({ error: 'Channel not found' });
+    const serverId = channelInfo.server_id;
+
+    if (!canAccessChannel(req.params.channelId, req.userId)) return res.status(403).json({ error: 'No permission' });
 
     let sql = `
       SELECT m.*, u.username, u.avatar, u.tag, u.name_color as user_name_color, u.level as user_level,
@@ -390,6 +403,25 @@ router.post('/:channelId', authMiddleware, (req, res) => {
         );
         if (recentMsgs.length >= (server.anti_spam === 2 ? 1 : 3)) {
           return res.status(429).json({ error: 'Слишком много сообщений. Подождите немного.' });
+        }
+      }
+
+      const isMod = ['owner', 'admin', 'moderator'].includes(userRole)
+        || hasPermission(req.userId, server.id, PERMISSIONS.MANAGE_MESSAGES);
+
+      const effectiveSlowmode = Math.max(Number(channel.slowmode) || 0, Number(server.slowmode_global) || 0);
+      if (!isMod && effectiveSlowmode > 0) {
+        const lastRow = queryOne(
+          'SELECT CAST((julianday("now") - julianday(created_at)) * 86400 AS INTEGER) AS age FROM messages WHERE user_id = ? AND channel_id = ? ORDER BY created_at DESC LIMIT 1',
+          [req.userId, req.params.channelId]
+        );
+        const age = lastRow?.age;
+        if (age != null && age < effectiveSlowmode) {
+          const retryAfter = effectiveSlowmode - age;
+          return res.status(429).json({
+            error: `Медленный режим: подождите ${retryAfter} сек.`,
+            retry_after: retryAfter,
+          });
         }
       }
     }

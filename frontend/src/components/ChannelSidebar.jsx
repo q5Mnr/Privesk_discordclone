@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Hash, Volume2, ChevronDown, ChevronRight, UserPlus, RefreshCw, Copy, Check, Settings, Calendar, MessageSquare, Zap } from 'lucide-react';
+import { Hash, Volume2, ChevronDown, ChevronRight, UserPlus, RefreshCw, Copy, Check, Settings, Calendar, MessageSquare, Zap, Clock } from 'lucide-react';
 import { hasChannelDraft, getDraftPreview } from '../utils/drafts';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -94,6 +94,9 @@ export default function ChannelSidebar({ server, channels, currentChannel, onSel
                   }`}
                 >
                   <Hash size={18} className={mentions > 0 ? 'text-discord-accent' : 'text-discord-muted'} />
+                  {channel.slowmode > 0 && (
+                    <Clock size={13} className="text-discord-yellow flex-shrink-0" title={t('Медленный режим')} />
+                  )}
                   {draft ? (
                     <span className="truncate flex-1 text-left">
                       <span className="text-discord-muted text-xs">{t('Черновик:')} </span>

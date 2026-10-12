@@ -956,5 +956,9 @@
   "Когда кто-то упомянет вас, это появится здесь": "Wenn dich jemand erwähnt, erscheint es hier",
   "в {server}": "in {server}",
   "Нет предстоящих событий": "Keine bevorstehenden Ereignisse",
-  "События ваших серверов появятся здесь": "Ereignisse deiner Server erscheinen hier"
+  "События ваших серверов появятся здесь": "Ereignisse deiner Server erscheinen hier",
+  "Медленный режим": "Langsamer Modus",
+  "{n} сек": "{n} Sek.",
+  "{n} мин": "{n} Min.",
+  "Подождите {n} сек": "Warte {n} Sek."
 }

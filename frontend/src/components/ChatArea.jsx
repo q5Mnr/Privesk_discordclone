@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Hash, Users, Search, Pin, X, Reply, Volume2, Send, Smile } from 'lucide-react';
+import { Hash, Users, Search, Pin, X, Reply, Volume2, Send, Smile, Clock } from 'lucide-react';
 import { apiGet, apiPost } from '../utils/api';
 import { getChannelDraft, setChannelDraft } from '../utils/drafts';
 import { useI18n } from '../i18n/I18nContext';
@@ -7,8 +7,14 @@ import MessageItem from './MessageItem';
 import VoiceChannel from './VoiceChannel';
 import EmojiPicker from './EmojiPicker';
 
+function slowmodeLabel(t, sec) {
+  if (sec >= 60 && sec % 60 === 0) return t('{n} мин', { n: sec / 60 });
+  return t('{n} сек', { n: sec });
+}
+
 export default function ChatArea({ channel, server, socket, user, onUsernameClick, members, onOpenThread, myPermissions }) {
   const canSendMessages = !server || (myPermissions & 1) !== 0;
+  const effectiveSlowmode = Math.max(channel?.slowmode || 0, server?.slowmode_global || 0);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
@@ -24,6 +30,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
   const [mentionQuery, setMentionQuery] = useState(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+  const [slowmodeLeft, setSlowmodeLeft] = useState(0);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
@@ -37,7 +44,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
 
   useEffect(() => {
     if (user) {
-      apiGet('/api/collection/my').then(d => setOwnedEmojis(d.emojis || [])).catch(() => {});
+      apiGet('/api/collection/my').then(d => setOwnedEmojis(d.collection || [])).catch(() => {});
     }
   }, [user?.id]);
 
@@ -50,6 +57,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
     setShowPins(false);
     setSearchQuery('');
     setSearchResults([]);
+    setSlowmodeLeft(0);
     setNewMessage(getChannelDraft(channel.id));
     return () => {
       setChannelDraft(channel.id, newMessageRef.current);
@@ -110,6 +118,12 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    if (slowmodeLeft <= 0) return;
+    const id = setTimeout(() => setSlowmodeLeft(prev => Math.max(0, prev - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [slowmodeLeft]);
+
   const loadMessages = async () => {
     if (!channel) return;
     try {
@@ -123,6 +137,7 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
   const handleSend = async (e) => {
     if (e) e.preventDefault();
     if (!newMessage.trim()) return;
+    if (slowmodeLeft > 0) return;
 
     const content = newMessage;
     const reply = replyTo;
@@ -149,6 +164,9 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
       console.error('Send failed:', err);
       setNewMessage(content);
       if (reply) setReplyTo(reply);
+      if (err.status === 429 && err.data && err.data.retry_after) {
+        setSlowmodeLeft(err.data.retry_after);
+      }
     }
   };
 
@@ -294,6 +312,15 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
           <>
             <div className="w-px h-6 bg-discord-light/30 mx-3" />
             <span className="text-sm text-discord-gray truncate">{channel.topic}</span>
+          </>
+        )}
+        {effectiveSlowmode > 0 && (
+          <>
+            <div className="w-px h-6 bg-discord-light/30 mx-3" />
+            <span className="flex items-center gap-1.5 text-xs font-medium text-discord-yellow bg-discord-yellow/10 border border-discord-yellow/30 rounded-full px-2.5 py-1 whitespace-nowrap" title={t('Медленный режим')}>
+              <Clock size={13} />
+              {slowmodeLabel(t, effectiveSlowmode)}
+            </span>
           </>
         )}
         <div className="flex-1" />
@@ -471,13 +498,18 @@ export default function ChatArea({ channel, server, socket, user, onUsernameClic
             placeholder={replyTo ? t('Ответить {name}...', { name: replyTo.username }) : t('Написать в #{name}', { name: channel.name })}
             className="flex-1 bg-transparent px-4 py-3 text-discord-text placeholder-discord-muted focus:outline-none"
           />
+          {slowmodeLeft > 0 && (
+            <span className="flex items-center gap-1 pr-1 text-xs text-discord-yellow whitespace-nowrap">
+              <Clock size={14} /> {t('Подождите {n} сек', { n: slowmodeLeft })}
+            </span>
+          )}
           <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             className="px-2 py-3 text-discord-gray hover:text-discord-yellow transition-colors">
             <Smile size={20} />
           </button>
           <button
             type="submit"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || slowmodeLeft > 0}
             className="px-4 py-3 text-discord-accent hover:text-white disabled:text-discord-muted transition-colors"
           >
             <Send size={20} />

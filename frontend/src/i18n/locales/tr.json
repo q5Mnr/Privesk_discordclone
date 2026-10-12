@@ -956,5 +956,9 @@
   "Когда кто-то упомянет вас, это появится здесь": "Biri sizden bahsettiğinde burada görünecek",
   "в {server}": "{server} içinde",
   "Нет предстоящих событий": "Yaklaşan etkinlik yok",
-  "События ваших серверов появятся здесь": "Sunucularınızdaki etkinlikler burada görünecek"
+  "События ваших серверов появятся здесь": "Sunucularınızdaki etkinlikler burada görünecek",
+  "Медленный режим": "Yavaş mod",
+  "{n} сек": "{n} sn",
+  "{n} мин": "{n} dk",
+  "Подождите {n} сек": "{n} sn bekleyin"
 }

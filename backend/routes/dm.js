@@ -6,6 +6,10 @@ const logger = require('../logger');
 
 const router = express.Router();
 
+function isDmMember(channelId, userId) {
+  return !!queryOne('SELECT id FROM dm_members WHERE dm_channel_id = ? AND user_id = ?', [channelId, userId]);
+}
+
 function loadReactions(messageIds) {
   if (messageIds.length === 0) return {};
   const rows = query(
@@ -104,6 +108,10 @@ router.post('/:userId', authMiddleware, (req, res) => {
 router.get('/:channelId/messages', authMiddleware, (req, res) => {
   try {
     const { limit = 50, before } = req.query;
+
+    if (!isDmMember(req.params.channelId, req.userId)) {
+      return res.status(403).json({ error: 'Not a member of this DM channel' });
+    }
 
     let sql = `
       SELECT m.*, u.username, u.avatar, u.tag
@@ -217,6 +225,10 @@ router.delete('/:channelId/messages/:messageId', authMiddleware, (req, res) => {
 router.post('/:channelId/messages/:messageId/reactions', authMiddleware, (req, res) => {
   try {
     const { emoji } = req.body;
+
+    if (!isDmMember(req.params.channelId, req.userId)) {
+      return res.status(403).json({ error: 'Not a member of this DM channel' });
+    }
 
     const existing = queryOne('SELECT * FROM reactions WHERE message_id = ? AND user_id = ? AND emoji = ?',
       [req.params.messageId, req.userId, emoji]);

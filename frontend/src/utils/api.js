@@ -36,13 +36,12 @@ export async function apiPost(path, body) {
     body: JSON.stringify(body)
   });
   if (!res.ok) {
-    try {
-      const data = await res.json();
-      throw new Error(data.error || 'Request failed');
-    } catch (e) {
-      if (e.message === 'Request failed') throw e;
-      throw new Error(`HTTP ${res.status}`);
-    }
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    const err = new Error(data.error || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
   const text = await res.text();
   if (!text) return {};
